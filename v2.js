@@ -1,7 +1,7 @@
 function header() {
   return `<div class="benefit-bar"><span>MODE FEMME</span><span>ROBES DE SOIRÉE</span><span>TAILLES 46 · 48 · 50</span></div>
   <header class="site-header"><div class="header-inner"><button class="icon-button mobile-menu" id="menu-toggle" aria-label="Ouvrir le menu">${svg('menu')}</button>
-  <a class="brand" href="/" aria-label="Khadidja Boutique, accueil"><img src="/assets/logo-transparent.png" alt=""><span>KHADIDJA</span></a>
+  <a class="brand" href="/" aria-label="Khadidja Boutique, accueil"><img src="/assets/logo-white.png" alt=""><span>KHADIDJA</span></a>
   <form class="header-search" id="header-search" role="search"><input type="search" placeholder="Rechercher une robe, une taille…" aria-label="Rechercher"><button aria-label="Rechercher">${svg('search')}</button></form>
   <div class="header-actions"><button class="icon-button search-toggle" id="search-toggle" aria-label="Rechercher">${svg('search')}</button><button class="icon-button bag-link" id="cart-toggle" aria-label="Ouvrir le panier">${svg('bag')}<span class="bag-count" data-cart-count>0</span></button></div></div>
   <nav class="main-nav" id="main-nav" aria-label="Navigation principale"><a href="/">ACCUEIL</a><a href="/robes-de-soiree/">ROBES DE SOIRÉE</a><a href="/nouveautes/">NOUVEAUTÉS</a><a href="/guide-tailles/">GUIDE DES TAILLES</a><a href="/la-maison/">LA BOUTIQUE</a><a href="/aide/">AIDE</a></nav>
@@ -10,7 +10,7 @@ function header() {
 }
 
 function footer() {
-  return `<footer class="footer" id="maison"><div class="footer-grid"><div><a class="footer-brand" href="/"><img src="/assets/logo-transparent.png" alt=""> KHADIDJA</a><p>La mode des grandes occasions.</p></div><div><h3>ACHETER</h3><a href="/robes-de-soiree/">Robes de soirée</a><a href="/nouveautes/">Nouveautés</a><a href="/panier/">Mon panier</a></div><div><h3>DÉCOUVRIR</h3><a href="/la-maison/">La boutique</a><a href="/guide-tailles/">Guide des tailles</a><a href="/aide/">Aide et commande</a></div><div><h3>INFORMATIONS</h3><p>Prix de la robe : 23 900 DA.</p><p>Livraison à confirmer. L’envoi des commandes sera activé prochainement.</p></div></div><div class="footer-bottom">© ${new Date().getFullYear()} KHADIDJA BOUTIQUE</div></footer>`;
+  return `<footer class="footer" id="maison"><div class="footer-grid"><div><a class="footer-brand" href="/"><img src="/assets/logo-white.png" alt=""> KHADIDJA</a><p>La mode des grandes occasions.</p></div><div><h3>ACHETER</h3><a href="/robes-de-soiree/">Robes de soirée</a><a href="/nouveautes/">Nouveautés</a><a href="/panier/">Mon panier</a></div><div><h3>DÉCOUVRIR</h3><a href="/la-maison/">La boutique</a><a href="/guide-tailles/">Guide des tailles</a><a href="/aide/">Aide et commande</a></div><div><h3>INFORMATIONS</h3><p>Prix de la robe : 23 900 DA.</p><p>Livraison à confirmer. L’envoi des commandes sera activé prochainement.</p></div></div><div class="footer-bottom">© ${new Date().getFullYear()} KHADIDJA BOUTIQUE</div></footer>`;
 }
 
 function home() {
