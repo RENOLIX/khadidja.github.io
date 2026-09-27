@@ -1,6 +1,5 @@
 // Firebase's web configuration is public. Access is controlled by Firestore rules.
-const KB_CATALOG_CACHE_KEY = 'khadidja-catalog-cache-v1';
-window.KB_CATALOG_READY = true;
+window.KB_CATALOG_READY = false;
 const KB_FIREBASE_CONFIG = {
   apiKey: 'AIzaSyDyyCv7wtrUxEH5W-DIUI4Hf_xdKPkIzoU',
   authDomain: 'khadidja-boutique.firebaseapp.com',
@@ -15,17 +14,13 @@ const KB_AUTH = firebase.auth();
 window.KB_FIREBASE_CONFIG = KB_FIREBASE_CONFIG;
 window.KB = {db: KB_DB, auth: KB_AUTH, serverTime: () => firebase.firestore.FieldValue.serverTimestamp()};
 
-try {
-  const cached = JSON.parse(localStorage.getItem(KB_CATALOG_CACHE_KEY) || 'null');
-  if (Array.isArray(cached) && cached.length && typeof PRODUCTS !== 'undefined') {
-    PRODUCTS.splice(0, PRODUCTS.length, ...cached);
-  }
-} catch (_) {}
-
 async function loadKhadidjaCatalog() {
   try {
     const state = await KB_DB.collection('settings').doc('catalog').get();
-    if (!state.exists || !state.data().ready) return;
+    if (!state.exists || !state.data().ready) {
+      PRODUCTS.splice(0, PRODUCTS.length);
+      return;
+    }
     const docs = await KB_DB.collection('products').get();
     const list = docs.docs.map(doc => {
       const data = doc.data();
@@ -48,7 +43,6 @@ async function loadKhadidjaCatalog() {
       return product;
     });
     PRODUCTS.splice(0, PRODUCTS.length, ...list);
-    localStorage.setItem(KB_CATALOG_CACHE_KEY, JSON.stringify(list));
     window.KB_CATALOG_READY = true;
     render();
     const productId = document.body.dataset.productId || new URLSearchParams(location.search).get('id');
@@ -62,9 +56,11 @@ async function loadKhadidjaCatalog() {
     }
   } catch (error) {
     console.error('Catalogue Firebase indisponible', error);
+    if (typeof PRODUCTS !== 'undefined') PRODUCTS.splice(0, PRODUCTS.length);
     window.KB_CATALOG_ERROR = true;
   } finally {
     window.KB_CATALOG_READY = true;
+    if (typeof render === 'function') render();
   }
 }
 document.addEventListener('DOMContentLoaded', () => {
