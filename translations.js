@@ -151,3 +151,28 @@ Object.assign(TRANSLATIONS,{
   'Comment sont calculés les frais de livraison ?':['How are delivery fees calculated?','كيف تحسب رسوم التوصيل؟'],'Les tarifs affichés par wilaya, à domicile et en bureau, suivent la grille fournie par la boutique. Un bureau indiqué comme indisponible ne peut pas être sélectionné.':['The home and office fees by wilaya follow the store’s tariff list. Unavailable offices cannot be selected.','تتبع رسوم التوصيل للمنزل أو المكتب حسب الولاية قائمة الأسعار المقدمة من المتجر. لا يمكن اختيار مكتب غير متاح.']
 });
 function tr(fr) { const lang=currentLanguage(); if(lang==='fr')return fr; const pair=TRANSLATIONS[fr]; return pair ? pair[lang==='en'?0:1] : fr; }
+Object.assign(TRANSLATIONS,{
+  'Devise actuelle':['Current currency','العملة الحالية'],
+  'BIEN CHOISIR':['CHOOSE WELL','اختاري المقاس المناسب'],
+  'Prenez vos mesures en quelques minutes pour trouver la taille qui vous convient.':['Take your measurements in a few minutes to find your size.','خذي قياساتك في دقائق لتجدي المقاس المناسب.'],
+  'LE BON GESTE':['HOW TO MEASURE','طريقة القياس'],
+  'Comment prendre vos mesures':['How to take your measurements','كيف تأخذين قياساتك'],
+  'Utilisez un mètre ruban souple. Mesurez-vous en sous-vêtements, debout et détendue. Gardez le ruban horizontal et près du corps, sans le serrer.':['Use a flexible tape measure. Measure in underwear while standing naturally. Keep the tape level and close to your body without tightening it.','استخدمي شريط قياس مرناً. قيسي جسمك بالملابس الداخلية وأنت واقفة براحة. أبقي الشريط أفقياً وملاصقاً للجسم دون شده.'],
+  'Robe longue bleu gris portée de face':['Blue grey long dress seen from the front','فستان أزرق رمادي طويل من الأمام'],
+  'Tour de poitrine':['Bust','محيط الصدر'],
+  'Passez le mètre autour de la partie la plus forte de la poitrine, sous les bras et dans le dos.':['Wrap the tape around the fullest part of your bust, under the arms and across the back.','لفي الشريط حول أعرض نقطة من الصدر وتحت الذراعين وعبر الظهر.'],
+  'Tour de taille':['Waist','محيط الخصر'],
+  'Mesurez le creux naturel de la taille, généralement au-dessus du nombril. Ne rentrez pas le ventre.':['Measure your natural waist, usually above the navel. Do not pull your stomach in.','قيسي أضيق جزء من الخصر، عادة فوق السرة. لا تشدي بطنك.'],
+  'Tour de hanches':['Hips','محيط الوركين'],
+  'Entourez la partie la plus large du bassin et des fesses, pieds joints.':['Measure around the widest part of your hips and seat with your feet together.','قيسي أعرض جزء من الوركين والأرداف مع ضم القدمين.'],
+  'TABLEAU DE CORRESPONDANCE':['SIZE CHART','جدول المقاسات'],
+  'Trouvez votre taille':['Find your size','اعثري على مقاسك'],
+  'Comparez vos mesures du corps, en centimètres, avec ces repères de confection. Il ne s’agit pas des mesures des robes : la coupe et le tissu peuvent modifier le rendu.':['Compare your body measurements in centimetres with these standard size references. They are not garment measurements: cut and fabric can affect the fit.','قارني قياسات جسمك بالسنتيمتر بهذه المقاسات الإرشادية. ليست قياسات الفساتين نفسها؛ فقد تؤثر القصة والقماش على الملاءمة.'],
+  'Poitrine':['Bust','الصدر'],'Hanches':['Hips','الوركان'],
+  'Ces valeurs sont indicatives. Les mesures exactes de chaque robe ne sont pas encore confirmées par la boutique.':['These values are indicative. The exact measurements of each dress have not yet been confirmed by the store.','هذه القيم إرشادية. لم يؤكد المتجر بعد القياسات الدقيقة لكل فستان.'],
+  'Entre deux tailles ?':['Between sizes?','بين مقاسين؟'],
+  'Fiez-vous d’abord à la mesure la plus forte. Pour une robe près du corps ou si vous préférez être à l’aise, choisissez la taille supérieure. Le modèle bleu gris est en maille élastique ; la robe nude a une taille ajustée. En cas de doute, demandez-nous les mesures du modèle avant de commander.':['Use your largest measurement as a guide. For a fitted dress or a roomier fit, choose the larger size. The blue grey dress has stretchy fabric; the nude dress has a fitted waist. If unsure, ask us for the garment measurements before ordering.','اعتمدي القياس الأكبر أولاً. للفستان الضيق أو لراحة أكبر اختاري المقاس الأكبر. الفستان الأزرق الرمادي من قماش مطاطي، أما الفستان النيود فخصره محدد. إذا ترددتِ، اطلبي منا قياسات الفستان قبل الطلب.'],
+  'Besoin d’un conseil ?':['Need advice?','تحتاجين إلى نصيحة؟'],
+  'Envoyez-nous vos tours de poitrine, taille et hanches, ainsi que le modèle choisi. Nous vous aiderons à sélectionner parmi les tailles 46, 48 et 50.':['Send us your bust, waist and hip measurements and the dress you want. We will help you choose among sizes 46, 48 and 50.','أرسلي لنا قياسات الصدر والخصر والوركين والموديل المختار، وسنساعدك في الاختيار بين 46 و48 و50.'],
+  'DÉCOUVRIR LES ROBES':['DISCOVER THE DRESSES','اكتشفي الفساتين']
+});
