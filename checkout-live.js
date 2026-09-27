@@ -71,9 +71,7 @@ setupCheckout = function () {
       const saved = await KB.db.collection('orders').add(order);
       saveCart([]);
       updateCount();
-      form.querySelectorAll('input,select,textarea,button').forEach(el => el.disabled = true);
-      result.innerHTML = `<strong>Commande enregistrée</strong><p>Référence : ${escapeHtml(saved.id)}. Notre équipe vous contactera au numéro indiqué.</p><a class="button button-outline" href="${link('/robes-de-soiree/')}">CONTINUER MES ACHATS</a>`;
-      result.scrollIntoView({behavior:'smooth',block:'center'});
+      location.href = link(`/merci/?ref=${encodeURIComponent(saved.id)}`);
     } catch (error) {
       console.error('Commande Firebase', error);
       result.innerHTML = `<strong>La commande n’a pas été enregistrée.</strong><p>${escapeHtml(error.message || 'Veuillez réessayer.')}</p>`;
