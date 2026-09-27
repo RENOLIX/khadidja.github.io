@@ -1,4 +1,6 @@
 // Firebase's web configuration is public. Access is controlled by Firestore rules.
+const KB_CATALOG_CACHE_KEY = 'khadidja-catalog-cache-v1';
+window.KB_CATALOG_READY = true;
 const KB_FIREBASE_CONFIG = {
   apiKey: 'AIzaSyDyyCv7wtrUxEH5W-DIUI4Hf_xdKPkIzoU',
   authDomain: 'khadidja-boutique.firebaseapp.com',
@@ -12,6 +14,13 @@ const KB_DB = firebase.firestore();
 const KB_AUTH = firebase.auth();
 window.KB_FIREBASE_CONFIG = KB_FIREBASE_CONFIG;
 window.KB = {db: KB_DB, auth: KB_AUTH, serverTime: () => firebase.firestore.FieldValue.serverTimestamp()};
+
+try {
+  const cached = JSON.parse(localStorage.getItem(KB_CATALOG_CACHE_KEY) || 'null');
+  if (Array.isArray(cached) && cached.length && typeof PRODUCTS !== 'undefined') {
+    PRODUCTS.splice(0, PRODUCTS.length, ...cached);
+  }
+} catch (_) {}
 
 async function loadKhadidjaCatalog() {
   try {
@@ -39,6 +48,7 @@ async function loadKhadidjaCatalog() {
       return product;
     });
     PRODUCTS.splice(0, PRODUCTS.length, ...list);
+    localStorage.setItem(KB_CATALOG_CACHE_KEY, JSON.stringify(list));
     window.KB_CATALOG_READY = true;
     render();
     const productId = document.body.dataset.productId || new URLSearchParams(location.search).get('id');
@@ -57,4 +67,6 @@ async function loadKhadidjaCatalog() {
     window.KB_CATALOG_READY = true;
   }
 }
-document.addEventListener('DOMContentLoaded', () => { if (typeof PRODUCTS !== 'undefined') loadKhadidjaCatalog(); });
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof PRODUCTS !== 'undefined') loadKhadidjaCatalog();
+});

@@ -113,4 +113,7 @@ function render() {
   document.querySelector('#app').innerHTML=(shellHeader()+body+shellFooter()).replace(/(href|src)="\//g,`$1="${BASE}/`).replace(/url\('\/assets/g,`url('${BASE}/assets`);
   updateCount();setupShell();if(page==='home')setupHero();if(page==='product'&&p&&p.active!==false)setupProduct(p);if(page==='cart')setupCart();if(page==='checkout')setupCheckout();if(typeof setupPro==='function')setupPro();
 }
-document.addEventListener('DOMContentLoaded',render);
+document.addEventListener('DOMContentLoaded',()=>{
+  if (window.KB_CATALOG_READY === false) return;
+  render();
+});
