@@ -1,5 +1,6 @@
 const root = document.querySelector('#admin-root');
 const SITE_BASE = location.hostname.endsWith('github.io') ? '/khadidja.github.io' : '';
+const YALIDINE_RELAY_URL = 'https://script.google.com/macros/s/AKfycbzhRfHmRNIn38HBGMKx1kcS-MBbQK0ksh9nb0sHYTyVBdZkEVzXCml8-QAq0MQ5-gHeKQ/exec';
 const sizesAvailable = Array.from({length:13}, (_,i) => String(34+i*2));
 const statuses = {nouvelle:'Nouvelle', expediee:'Expédiée', livree:'Livrée', annulee:'Annulée', injoignable:'Injoignable'};
 const state = {user:null, role:null, tab:'dashboard', orderId:null, products:[], orders:[], staff:[], editor:null, editorImages:[], stopOrders:null, busy:false};
@@ -52,7 +53,9 @@ function ordersView(){
 function orderDetailView(order){
   const delivery=order.delivery||{},customer=order.customer||{};
   const items=(order.items||[]).map(item=>{const product=state.products.find(p=>p.id===item.productId);return `<div class="order-line"><img src="${image(product?.cover||'')}" alt=""><div><strong>${esc(item.quantity)} × ${esc(item.name)}</strong><span>${esc(item.color)} · Taille ${esc(item.size)}</span></div><b>${money(item.unitPrice*item.quantity)}</b></div>`}).join('');
-  return `${title('SUIVI DES ACHATS',`Commande #${esc(order.id.slice(0,8))}`,`<button class="ghost" id="back-orders">← Toutes les commandes</button>`)}<article class="order-card order-detail-page"><div class="order-head"><div><span class="order-meta">${esc(when(order.createdAt))}</span><h3>${esc(customer.name||'Client')}</h3><p class="order-meta">${esc(customer.phone||'')} · ${esc(delivery.wilaya||'')}</p></div><span class="status ${esc(order.status)}">${statuses[order.status]||esc(order.status)}</span></div><div class="order-columns"><div><strong>Articles</strong><div class="order-lines">${items}</div><p>Sous-total : ${money(order.subtotal)}<br>Livraison : ${money(order.shippingFee)}<br><strong>Total : ${money(order.total)}</strong></p></div><div><strong>Livraison ${delivery.method==='bureau'?'en bureau':'à domicile'}</strong><p>${esc(delivery.wilayaCode||'')} ${esc(delivery.wilaya||'')} · ${esc(delivery.commune||'')}<br>${esc(delivery.method==='bureau'?delivery.office||'':delivery.address||'')}</p>${order.notes?`<p>Note : ${esc(order.notes)}</p>`:''}<div class="yalidine-panel"><strong>Expédition Yalidine</strong><p class="note">L’envoi sera créé depuis le serveur sécurisé de la boutique, sans exposer les identifiants API dans le navigateur.</p><button type="button" class="primary" data-yalidine-send="${esc(order.id)}">ENVOYER À YALIDINE</button></div></div></div><form class="order-edit card" data-order-edit="${esc(order.id)}"><h4>Modifier les informations</h4><div class="form-grid"><label class="field">Nom<input name="name" value="${esc(customer.name)}" required></label><label class="field">Téléphone<input name="phone" value="${esc(customer.phone)}" required dir="ltr"></label><label class="field">Wilaya<input name="wilaya" value="${esc(delivery.wilaya)}" required></label><label class="field">Commune<input name="commune" value="${esc(delivery.commune)}" required></label><label class="field full">Adresse<input name="address" value="${esc(delivery.address||delivery.office||'')}"></label><label class="field full">Notes<textarea name="notes" rows="2">${esc(order.notes||'')}</textarea></label></div><div class="order-foot"><label class="field">Statut <select data-order-status="${esc(order.id)}">${Object.entries(statuses).map(([key,value])=>`<option value="${key}" ${order.status===key?'selected':''}>${value}</option>`).join('')}</select></label><button class="primary" type="submit">ENREGISTRER LES MODIFICATIONS</button></div></form></article>`;
+  const canShip=state.role==='admin'&&order.currency==='DZD'&&order.payment==='livraison'&&['nouvelle','injoignable'].includes(order.status);
+  const yalidine=order.yalidine?.tracking?`<div class="yalidine-panel"><strong>Expédition Yalidine</strong><p>Numéro de suivi : <strong dir="ltr">${esc(order.yalidine.tracking)}</strong></p></div>`:canShip?`<div class="yalidine-panel"><strong>Créer un envoi Yalidine</strong><p class="note">Renseignez les dimensions réelles du colis avant l’envoi.</p><form id="yalidine-form"><div class="form-grid"><label class="field">Poids (kg)<input type="number" name="weight" min="0.01" step="0.01" required></label><label class="field">Hauteur (cm)<input type="number" name="height" min="1" step="1" required></label><label class="field">Largeur (cm)<input type="number" name="width" min="1" step="1" required></label><label class="field">Longueur (cm)<input type="number" name="length" min="1" step="1" required></label>${delivery.method==='bureau'?'<label class="field full">ID du bureau Yalidine<input type="number" name="stopdeskId" min="1" step="1" required placeholder="Identifiant numérique du bureau"></label>':''}</div><button class="primary" type="submit">ENVOYER À YALIDINE</button></form></div>`:'';
+  return `${title('SUIVI DES ACHATS',`Commande #${esc(order.id.slice(0,8))}`,`<button class="ghost" id="back-orders">← Toutes les commandes</button>`)}<article class="order-card order-detail-page"><div class="order-head"><div><span class="order-meta">${esc(when(order.createdAt))}</span><h3>${esc(customer.name||'Client')}</h3><p class="order-meta">${esc(customer.phone||'')} · ${esc(delivery.wilaya||'')}</p></div><span class="status ${esc(order.status)}">${statuses[order.status]||esc(order.status)}</span></div><div class="order-columns"><div><strong>Articles</strong><div class="order-lines">${items}</div><p>Sous-total : ${money(order.subtotal)}<br>Livraison : ${money(order.shippingFee)}<br><strong>Total : ${money(order.total)}</strong></p></div><div><strong>Livraison ${delivery.method==='bureau'?'en bureau':'à domicile'}</strong><p>${esc(delivery.wilayaCode||'')} ${esc(delivery.wilaya||'')} · ${esc(delivery.commune||'')}<br>${esc(delivery.method==='bureau'?delivery.office||'':delivery.address||'')}</p>${order.notes?`<p>Note : ${esc(order.notes)}</p>`:''}${yalidine}</div></div><form class="order-edit card" data-order-edit="${esc(order.id)}"><h4>Modifier les informations</h4><div class="form-grid"><label class="field">Nom<input name="name" value="${esc(customer.name)}" required></label><label class="field">Téléphone<input name="phone" value="${esc(customer.phone)}" required dir="ltr"></label><label class="field">Wilaya<input name="wilaya" value="${esc(delivery.wilaya)}" required></label><label class="field">Commune<input name="commune" value="${esc(delivery.commune)}" required></label><label class="field full">Adresse<input name="address" value="${esc(delivery.address||delivery.office||'')}"></label><label class="field full">Notes<textarea name="notes" rows="2">${esc(order.notes||'')}</textarea></label></div><div class="order-foot"><label class="field">Statut <select data-order-status="${esc(order.id)}">${Object.entries(statuses).map(([key,value])=>`<option value="${key}" ${order.status===key?'selected':''}>${value}</option>`).join('')}</select></label><button class="primary" type="submit">ENREGISTRER LES MODIFICATIONS</button></div></form></article>`;
 }
 function orderCards(orders){return orders.length?orders.map(order=>{
   const delivery=order.delivery||{},customer=order.customer||{};
@@ -77,12 +80,42 @@ async function saveOrderEdit(event){
   catch(error){ notice(`Commande non modifiée : ${error.message}`,true); }
   finally{button.disabled=false;}
 }
+async function sendYalidine(event){
+  event.preventDefault();
+  const form=event.currentTarget,button=form.querySelector('[type="submit"]'),orderId=state.orderId;
+  if(state.role!=='admin'){notice('Accès administrateur requis.',true);return}
+  if(!YALIDINE_RELAY_URL){notice('La connexion Apps Script est en cours de configuration.',true);return}
+  button.disabled=true;button.textContent='ENVOI EN COURS…';
+  let frame,postForm;
+  try{
+    const token=await KB.auth.currentUser.getIdToken();
+    const data=new FormData(form);
+    data.set('idToken',token);data.set('orderId',orderId);data.set('origin',location.origin);
+    const frameName='yalidine-response-'+Date.now();
+    frame=document.createElement('iframe');frame.name=frameName;frame.hidden=true;document.body.append(frame);
+    postForm=document.createElement('form');postForm.method='POST';postForm.action=YALIDINE_RELAY_URL;postForm.target=frameName;postForm.hidden=true;
+    for(const [name,value] of data){const input=document.createElement('input');input.name=name;input.value=value;postForm.append(input)}
+    document.body.append(postForm);
+    const result=await new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>{window.removeEventListener('message',onMessage);reject(new Error('Yalidine ne répond pas. Vérifiez son tableau de bord avant de réessayer.'))},60000);
+      function onMessage(message){
+        if(!['https://script.googleusercontent.com','https://script.google.com'].includes(message.origin)||message.source!==frame.contentWindow||!message.data||message.data.orderId!==orderId&&message.data.ok){return}
+        clearTimeout(timer);window.removeEventListener('message',onMessage);resolve(message.data);
+      }
+      window.addEventListener('message',onMessage);postForm.submit();
+    });
+    if(!result.ok)throw new Error(result.error||'Yalidine a refusé le colis.');
+    await KB.db.collection('orders').doc(orderId).update({status:'expediee',yalidine:{tracking:String(result.tracking),sentAt:KB.serverTime()},updatedAt:KB.serverTime()});
+    notice(`Envoi Yalidine créé · ${result.tracking}.`);
+  }catch(error){notice(error.message||'Envoi impossible.',true);button.disabled=false;button.textContent='ENVOYER À YALIDINE'}
+  finally{postForm?.remove();frame?.remove()}
+}
 function bindTab(){
   root.querySelectorAll('[data-order-page]').forEach(button=>button.addEventListener('click',()=>{state.orderId=button.dataset.orderPage;state.tab='order-detail';history.pushState(null,'',`${location.pathname}?order=${encodeURIComponent(state.orderId)}`);renderTab()}));
   root.querySelector('#back-orders')?.addEventListener('click',()=>{state.orderId=null;state.tab='orders';history.replaceState(null,'',location.pathname);renderTab()});
   root.querySelectorAll('[data-order-edit]').forEach(form=>form.addEventListener('submit',saveOrderEdit));
   root.querySelectorAll('[data-order-open]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();state.orderId=link.dataset.orderOpen;state.tab='order-detail';history.pushState(null,'',`${location.pathname}?order=${encodeURIComponent(state.orderId)}`);renderTab()}));
-  root.querySelectorAll('[data-yalidine-send]').forEach(button=>button.addEventListener('click',async()=>{button.disabled=true;button.textContent='ENVOI…';try{const token=await KB.auth.currentUser.getIdToken();const response=await fetch('https://europe-west1-khadidja-boutique.cloudfunctions.net/createYalidineShipment',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({orderId:button.dataset.yalidineSend})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Échec Yalidine');notice(`Envoi Yalidine créé${result.tracking?` · ${result.tracking}`:''}.`);button.textContent=result.tracking?`YALIDINE · ${result.tracking}`:'ENVOYÉ À YALIDINE';}catch(error){notice(error.message,true);button.disabled=false;button.textContent='ENVOYER À YALIDINE';}}));
+  root.querySelector('#yalidine-form')?.addEventListener('submit',sendYalidine);
   root.querySelector('#refresh-orders')?.addEventListener('click',()=>loadOrders());
   const filter=root.querySelector('#order-filter'),search=root.querySelector('#order-search');
   [filter,search].filter(Boolean).forEach(el=>el.addEventListener('input',()=>{root.querySelectorAll('.order-card').forEach(card=>{card.hidden=(filter.value!=='all'&&card.dataset.status!==filter.value)||(search.value&& !card.dataset.search.includes(search.value.toLowerCase()))})}));
