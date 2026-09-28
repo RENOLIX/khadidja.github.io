@@ -134,7 +134,8 @@ function createShipment_(input) {
     }
     // Yalidine returns either an array, a keyed object, or {data:[...]}. Normalize all forms.
     const item = Array.isArray(body) ? body[0] : (Array.isArray(body.data) ? body.data[0] : (body[orderId] || body));
-    const tracking = item && (item.tracking || item.tracking_number || item.parcel_id || item.data?.tracking);
+    const labelTracking = item && item.label && String(item.label).match(/[?&]tracking=([^&]+)/);
+    const tracking = item && (item.tracking || item.tracking_number || item.parcel_id || item.data?.tracking || (labelTracking && labelTracking[1]));
     if (!tracking || item.success === false) throw new Error('Réponse Yalidine incertaine. Contrôlez le tableau de bord Yalidine avant tout nouvel essai.');
     props.setProperty(key, JSON.stringify({tracking: String(tracking), sentAt: new Date().toISOString()}));
     return {ok: true, tracking: String(tracking), orderId: orderId};
