@@ -65,6 +65,13 @@ function resolveCenter_(delivery) {
   throw new Error('Choisissez une ville et un bureau Yalidine pour cette commande.');
 }
 
+function normalizeCommune_(delivery) {
+  const raw = String(delivery.commune || '').trim();
+  const key = raw.toLocaleLowerCase('fr-FR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (Number(delivery.wilayaCode) === 16 && key === 'alger') return 'Alger Centre';
+  return raw;
+}
+
 function createShipment_(input) {
   const token = String(input.idToken || '');
   const orderId = String(input.orderId || '');
@@ -110,7 +117,7 @@ function createShipment_(input) {
       familyname: names.join(' ') || 'Khadidja',
       contact_phone: String(customer.phone),
       address: String(isStopdesk ? stopdesk.address : delivery.address),
-      to_commune_name: String(isStopdesk ? stopdesk.commune : delivery.commune),
+      to_commune_name: String(isStopdesk ? stopdesk.commune : normalizeCommune_(delivery)),
       to_wilaya_name: String(delivery.wilaya),
       product_list: (order.items || []).map(item => String(item.quantity || 1) + '× ' + String(item.name || 'Robe')).join(', '),
       price: Number(order.total),
@@ -136,7 +143,11 @@ function createShipment_(input) {
     const item = Array.isArray(body) ? body[0] : (Array.isArray(body.data) ? body.data[0] : (body[orderId] || body));
     const labelTracking = item && item.label && String(item.label).match(/[?&]tracking=([^&]+)/);
     const tracking = item && (item.tracking || item.tracking_number || item.parcel_id || item.data?.tracking || (labelTracking && labelTracking[1]));
-    if (!tracking || item.success === false) throw new Error('Réponse Yalidine incertaine. Contrôlez le tableau de bord Yalidine avant tout nouvel essai.');
+    if (!tracking || item.success === false) {
+      props.deleteProperty(key);
+      const detail = item && (item.message || item.error) ? String(item.message || item.error) : 'Yalidine n’a pas fourni de numéro de suivi.';
+      throw new Error(detail);
+    }
     props.setProperty(key, JSON.stringify({tracking: String(tracking), sentAt: new Date().toISOString()}));
     return {ok: true, tracking: String(tracking), orderId: orderId};
   } finally {
