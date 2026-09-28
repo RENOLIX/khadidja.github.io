@@ -4,6 +4,18 @@ const PROJECT_ID = 'khadidja-boutique';
 const FIREBASE_API_KEY = 'AIzaSyDyyCv7wtrUxEH5W-DIUI4Hf_xdKPkIzoU';
 const ALLOWED_ORIGINS = ['https://khadidja.shop', 'https://www.khadidja.shop', 'https://renolix.github.io'];
 
+function doGet(e) {
+  const origin = String(e.parameter.origin || '');
+  let result;
+  try {
+    if (ALLOWED_ORIGINS.indexOf(origin) < 0 || e.parameter.mode !== 'centers') throw new Error('Demande non autorisée.');
+    result = {type: 'yalidine-centers', ok: true, centers: listCenters_()};
+  } catch (error) {
+    result = {type: 'yalidine-centers', ok: false, error: String(error.message || error)};
+  }
+  return messagePage_(result, origin);
+}
+
 function doPost(e) {
   const origin = String(e.parameter.origin || '');
   const targetOrigin = ALLOWED_ORIGINS.indexOf(origin) >= 0 ? origin : ALLOWED_ORIGINS[0];
@@ -14,9 +26,43 @@ function doPost(e) {
   } catch (error) {
     result = {ok: false, error: String(error.message || error)};
   }
+  return messagePage_(result, targetOrigin);
+}
+
+function messagePage_(result, origin) {
   const payload = JSON.stringify(result).replace(/</g, '\\u003c');
-  const html = '<!doctype html><meta charset="utf-8"><script>parent.postMessage(' + payload + ',' + JSON.stringify(targetOrigin) + ');</script>';
+  const target = ALLOWED_ORIGINS.indexOf(origin) >= 0 ? origin : ALLOWED_ORIGINS[0];
+  const html = '<!doctype html><meta charset="utf-8"><script>parent.postMessage(' + payload + ',' + JSON.stringify(target) + ');</script>';
   return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function listCenters_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('yalidine_centers_v1');
+  if (cached) return JSON.parse(cached);
+  const props = PropertiesService.getScriptProperties();
+  const headers = {'X-API-ID': props.getProperty('YALIDINE_API_ID'), 'X-API-TOKEN': props.getProperty('YALIDINE_API_TOKEN')};
+  if (!headers['X-API-ID'] || !headers['X-API-TOKEN']) throw new Error('Accès Yalidine non configuré.');
+  const centers = [];
+  for (let page = 1; page <= 10; page++) {
+    const response = UrlFetchApp.fetch('https://api.yalidine.app/v1/centers?page=' + page, {headers: headers, muteHttpExceptions: true});
+    if (response.getResponseCode() !== 200) throw new Error('Liste des bureaux Yalidine indisponible.');
+    const body = JSON.parse(response.getContentText());
+    if (!Array.isArray(body.data)) throw new Error('Liste des bureaux Yalidine invalide.');
+    body.data.forEach(center => centers.push({id: Number(center.center_id), name: String(center.name || ''), communeId: Number(center.commune_id), commune: String(center.commune_name || ''), wilayaId: Number(center.wilaya_id), address: String(center.address || '')}));
+    if (!body.has_more) break;
+  }
+  if (!centers.length) throw new Error('Aucun bureau Yalidine disponible.');
+  cache.put('yalidine_centers_v1', JSON.stringify(centers), 21600);
+  return centers;
+}
+
+function resolveCenter_(delivery) {
+  const saved = Number(delivery.stopdeskId);
+  const centers = listCenters_().filter(center => center.wilayaId === Number(delivery.wilayaCode));
+  const center = centers.find(item => item.id === saved);
+  if (Number.isInteger(saved) && center) return center;
+  throw new Error('Choisissez une ville et un bureau Yalidine pour cette commande.');
 }
 
 function createShipment_(input) {
@@ -52,11 +98,10 @@ function createShipment_(input) {
     if (!apiId || !apiToken) throw new Error('Identifiants Yalidine non configurés dans Apps Script.');
     const customer = order.customer || {}, delivery = order.delivery || {};
     const names = String(customer.name || '').trim().split(/\s+/);
-    const weight = Number(input.weight), height = Number(input.height), width = Number(input.width), length = Number(input.length);
-    if (![weight, height, width, length].every(n => Number.isFinite(n) && n > 0)) throw new Error('Poids et dimensions du colis requis.');
+    const itemCount = (order.items || []).reduce((sum, item) => sum + Number(item.quantity || 1), 0);
+    if (!itemCount) throw new Error('La commande ne contient aucun produit.');
     const isStopdesk = delivery.method === 'bureau';
-    const stopdeskId = Number(input.stopdeskId);
-    if (isStopdesk && (!Number.isInteger(stopdeskId) || stopdeskId <= 0)) throw new Error('Identifiant Yalidine du bureau requis.');
+    const stopdesk = isStopdesk ? resolveCenter_(delivery) : null;
     if (!customer.phone || !delivery.wilaya || !delivery.commune || (!isStopdesk && !delivery.address)) throw new Error('Coordonnées de livraison incomplètes.');
     const parcel = {
       order_id: orderId,
@@ -64,17 +109,17 @@ function createShipment_(input) {
       firstname: names.shift() || 'Client',
       familyname: names.join(' ') || 'Khadidja',
       contact_phone: String(customer.phone),
-      address: String(delivery.address || delivery.office || ''),
-      to_commune_name: String(delivery.commune),
+      address: String(isStopdesk ? stopdesk.address : delivery.address),
+      to_commune_name: String(isStopdesk ? stopdesk.commune : delivery.commune),
       to_wilaya_name: String(delivery.wilaya),
       product_list: (order.items || []).map(item => String(item.quantity || 1) + '× ' + String(item.name || 'Robe')).join(', '),
       price: Number(order.total),
-      height: height, width: width, length: length, weight: weight,
+      height: Math.max(10, itemCount * 6), width: 30, length: 40, weight: Math.max(1, Math.ceil(itemCount * 0.8)),
       // Checkout already includes the delivery charge in order.total.
       freeshipping: true, is_stopdesk: isStopdesk, has_exchange: false,
       product_to_collect: null
     };
-    if (isStopdesk) parcel.stopdesk_id = stopdeskId;
+    if (isStopdesk) parcel.stopdesk_id = stopdesk.id;
     props.setProperty(key, JSON.stringify({pending: true, createdAt: new Date().toISOString()}));
     const response = UrlFetchApp.fetch('https://api.yalidine.app/v1/parcels/', {
       method: 'post', contentType: 'application/json',

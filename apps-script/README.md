@@ -9,6 +9,6 @@ Le site statique ne reçoit jamais les identifiants Yalidine. Le projet Google A
 3. Reporter l’URL `/exec` du déploiement dans `YALIDINE_RELAY_URL` de `admin/admin.js`.
 4. Publier `firestore.rules` avant d’utiliser l’envoi afin de permettre à l’admin d’enregistrer le suivi.
 
-Le relais accepte uniquement les commandes DZD payées à la livraison, nouvelles ou injoignables. Le départ est Alger. Pour une livraison en bureau, saisir l’identifiant numérique du bureau Yalidine dans la page de commande. Un verrou et une propriété par commande bloquent les doubles envois. En cas de réponse incertaine, vérifier la commande dans Yalidine avant toute nouvelle tentative.
+Le relais accepte uniquement les commandes DZD payées à la livraison, nouvelles ou injoignables. Le départ est Alger. Dans l’admin, une livraison en bureau affiche les villes et les agences récupérées depuis l’API Yalidine. Le choix est enregistré dans la commande avant l’envoi. Le poids et les dimensions sont estimés automatiquement à partir du nombre de robes ; il faut contrôler les valeurs réelles dans Yalidine si le colis est atypique. Un verrou et une propriété par commande bloquent les doubles envois. En cas de réponse incertaine, vérifier la commande dans Yalidine avant toute nouvelle tentative.
 
 Les frais de livraison sont déjà inclus dans `order.total`; le colis est marqué `freeshipping` chez Yalidine afin que le destinataire ne paie pas deux fois les frais.
