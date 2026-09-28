@@ -9,7 +9,7 @@ function loadYalidineCenters(){
     let timer;
     function finish(error,centers){clearTimeout(timer);window.removeEventListener('message',onMessage);frame.remove();if(error){yalidineCentersPromise=null;reject(error)}else resolve(centers)}
     function onMessage(message){
-      if(!['https://script.googleusercontent.com','https://script.google.com'].includes(message.origin)||message.source!==frame.contentWindow||message.data?.type!=='yalidine-centers')return;
+      if(!['https://script.googleusercontent.com','https://script.google.com'].includes(message.origin)||message.data?.type!=='yalidine-centers')return;
       if(!message.data.ok||!Array.isArray(message.data.centers))finish(new Error(message.data.error||'Bureaux Yalidine indisponibles.'));
       else finish(null,message.data.centers);
     }
@@ -151,9 +151,9 @@ async function sendYalidine(event){
     for(const [name,value] of data){const input=document.createElement('input');input.name=name;input.value=value;postForm.append(input)}
     document.body.append(postForm);
     const result=await new Promise((resolve,reject)=>{
-      const timer=setTimeout(()=>{window.removeEventListener('message',onMessage);reject(new Error('Yalidine ne répond pas. Vérifiez son tableau de bord avant de réessayer.'))},60000);
+      const timer=setTimeout(()=>{window.removeEventListener('message',onMessage);reject(new Error('Yalidine ne répond pas. Vérifiez les identifiants API et réessayez.'))},20000);
       function onMessage(message){
-        if(!['https://script.googleusercontent.com','https://script.google.com'].includes(message.origin)||message.source!==frame.contentWindow||!message.data||message.data.orderId!==orderId&&message.data.ok){return}
+        if(!['https://script.googleusercontent.com','https://script.google.com'].includes(message.origin)||!message.data||typeof message.data.ok!=='boolean'){return}
         clearTimeout(timer);window.removeEventListener('message',onMessage);resolve(message.data);
       }
       window.addEventListener('message',onMessage);postForm.submit();
