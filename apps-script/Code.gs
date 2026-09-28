@@ -32,7 +32,7 @@ function doPost(e) {
 function messagePage_(result, origin) {
   const payload = JSON.stringify(result).replace(/</g, '\\u003c');
   const target = ALLOWED_ORIGINS.indexOf(origin) >= 0 ? origin : ALLOWED_ORIGINS[0];
-  const html = '<!doctype html><meta charset="utf-8"><script>parent.postMessage(' + payload + ',' + JSON.stringify(target) + ');</script>';
+  const html = '<!doctype html><meta charset="utf-8"><script>var p=' + payload + ';var t=' + JSON.stringify(target) + ';try{window.top.postMessage(p,t)}catch(e){}try{parent.postMessage(p,t)}catch(e){}</script>';
   return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 

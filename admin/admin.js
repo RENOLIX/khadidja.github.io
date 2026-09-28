@@ -14,7 +14,7 @@ function loadYalidineCenters(){
       else finish(null,message.data.centers);
     }
     window.addEventListener('message',onMessage);
-    timer=setTimeout(()=>finish(new Error('Les bureaux Yalidine ne répondent pas. Réessayez.')),20000);
+    timer=setTimeout(()=>finish(new Error('Les bureaux Yalidine ne répondent pas. Réessayez.')),8000);
     frame.src=`${YALIDINE_RELAY_URL}?mode=centers&origin=${encodeURIComponent(location.origin)}`;
     document.body.append(frame);
   });
@@ -151,9 +151,9 @@ async function sendYalidine(event){
     for(const [name,value] of data){const input=document.createElement('input');input.name=name;input.value=value;postForm.append(input)}
     document.body.append(postForm);
     const result=await new Promise((resolve,reject)=>{
-      const timer=setTimeout(()=>{window.removeEventListener('message',onMessage);reject(new Error('Yalidine ne répond pas. Vérifiez les identifiants API et réessayez.'))},20000);
+      const timer=setTimeout(()=>{window.removeEventListener('message',onMessage);reject(new Error('Yalidine ne répond pas. Vérifiez les identifiants API et réessayez.'))},8000);
       function onMessage(message){
-        if(!['https://script.googleusercontent.com','https://script.google.com'].includes(message.origin)||!message.data||typeof message.data.ok!=='boolean'){return}
+        if(!message.data||typeof message.data.ok!=='boolean'){return}
         clearTimeout(timer);window.removeEventListener('message',onMessage);resolve(message.data);
       }
       window.addEventListener('message',onMessage);postForm.submit();
