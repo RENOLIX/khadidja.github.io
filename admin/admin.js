@@ -1,6 +1,6 @@
 const root = document.querySelector('#admin-root');
 const SITE_BASE = location.hostname.endsWith('github.io') ? '/khadidja.github.io' : '';
-const YALIDINE_RELAY_URL = 'https://script.google.com/macros/s/AKfycbz6pWnLFKpV6B57p_0sANismLDnX5lXRII_Af4caMKy-yUXj0YEH9t-LFsAE2q5k1EbMw/exec';
+const YALIDINE_RELAY_URL = 'https://script.google.com/macros/s/AKfycbyRVMZuK2GzQjsklwFXGYJnMfuU-GfqTrg3VBY98T-yhUbkUfyDw9MYT83b4WO46tSU/exec';
 let yalidineCentersPromise;
 function loadYalidineCenters(){
   if(yalidineCentersPromise)return yalidineCentersPromise;
