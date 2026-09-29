@@ -34,8 +34,9 @@ const LEGAL_LABELS = {
 function legalCheckoutNotice() {
   const i = legalLangIndex();
   const accept = ['J’accepte les','I accept the','أوافق على'][i];
+  const privacyLabel = ['politique de confidentialité','privacy policy','سياسة الخصوصية'][i];
   const notice = ['Les données de votre commande sont utilisées pour son traitement, conformément à notre','Your order details are used to fulfil your purchase, as described in our','تُستخدم بيانات طلبك لمعالجته وفق'][i];
-  return `<div class="checkout-legal"><label><input type="checkbox" name="acceptTerms" required><span>${accept} <a href="${link(LEGAL_ROUTES.terms)}" target="_blank" rel="noopener">${legalText('terms')}</a>.</span></label><p>${notice} <a href="${link(LEGAL_ROUTES.privacy)}" target="_blank" rel="noopener">${legalText('privacy')}</a>.</p></div>`;
+  return `<div class="checkout-legal"><label><input type="checkbox" name="acceptTerms" required><span>${accept} <a href="${link(LEGAL_ROUTES.terms)}" target="_blank" rel="noopener">${legalText('terms')}</a>.</span></label><p>${notice} <a href="${link(LEGAL_ROUTES.privacy)}" target="_blank" rel="noopener">${privacyLabel}</a>.</p></div>`;
 }
 const LEGAL_ROUTES = {privacy:'/confidentialite/', cookies:'/cookies/', terms:'/conditions-generales-vente/', delivery:'/livraison-retours/', notices:'/mentions-legales/', use:'/conditions-utilisation/'};
 function legalLangIndex() { return {fr:0,en:1,ar:2}[currentLanguage()] ?? 0; }
