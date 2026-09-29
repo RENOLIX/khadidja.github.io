@@ -1,7 +1,15 @@
 # Khadidja Boutique
 
-Boutique statique de robes pour femme, publiée avec GitHub Pages. Le catalogue, le panier et la préparation de commande se trouvent dans `store.js`. Le panier est conservé dans le navigateur du client.
+Boutique publiée sur GitHub Pages à [khadidja.shop](https://khadidja.shop). Les produits et les commandes proviennent de Firestore ; l'administration se trouve sous `/admin/`. Le panier et les préférences de langue/devise sont conservés dans le navigateur du client.
 
-Les deux robes sont affichées à 23 900 DA. Le panier reste dans le navigateur du client. Le formulaire en dinars calcule la livraison selon la grille des 58 wilayas fournie par le propriétaire le 27 septembre 2026 (`shipping-data.js`). Un tarif bureau à 0 signifie que le retrait en bureau n'est pas proposé. Le paiement en dinars s'effectue à la livraison. Le formulaire prépare un e-mail à `youcefkhaldi11@hotmail.com` : le client doit l'envoyer depuis sa messagerie pour transmettre sa commande. Il n'y a pas encore de traitement serveur ni de confirmation automatique.
+## Catalogue et stock
 
-Les devises EUR et USD utilisent les taux indiqués par le propriétaire : 1 EUR = 280 DA et 1 USD = 250 DA (`pro.js`). Le formulaire international comprend un menu de 249 pays et territoires, un champ département/région/état, la ville, l'adresse et le code postal. La livraison internationale et le paiement par carte ne sont pas actifs. Le panneau Stripe est volontairement désactivé tant que le compte marchand et un serveur de paiement ne sont pas connectés ; aucune donnée de carte n'est recueillie. Les préférences FR/EN/AR et DZD/EUR/USD sont conservées localement dans le navigateur. L'arabe utilise la mise en page RTL. Le footer présente le paiement à la livraison comme actif et les réseaux de cartes comme à venir.
+`catalog-data.js` définit cinq catégories : robes de soirée, bijoux et accessoires, chaussures et sacs, robes grande taille et sous-vêtements. Les quatre dernières ont leur propre page et restent vides jusqu'à l'ajout de produits dans l'administration. Les photos de catégories dans `assets/category-*.jpg` sont des visuels d'illustration créés pour la navigation ; elles ne représentent pas des articles en vente. Un ancien produit sans champ `category` appartient par défaut aux robes de soirée.
+
+Dans l'administration, chaque produit possède une catégorie, des tailles (34 à 58 ou TU pour taille unique), plusieurs photos et un stock entier. Le tableau de bord et la liste des produits signalent les stocks inconnus, nuls ou de 1 à 5 articles. Les anciens produits gardent leur quantité inconnue jusqu'à ce qu'elle soit renseignée. **Le stock est mis à jour manuellement après les commandes** ; le site limite le panier à la quantité enregistrée, mais ne réserve ni ne décrémente automatiquement les articles.
+
+## Commandes et livraison
+
+Le paiement en dinars s'effectue à la livraison. Le formulaire crée la commande dans Firestore. Les communes proviennent de `communes-data.js` et apparaissent immédiatement ; les tarifs de livraison sont récupérés auprès de Yalidine via le relais Apps Script décrit dans `apps-script/README.md`. Les commandes peuvent être consultées et modifiées dans l'administration.
+
+Les devises EUR et USD utilisent les taux boutique 1 EUR = 280 DA et 1 USD = 250 DA. Le paiement international par Stripe reste indisponible jusqu'à la connexion du compte marchand et d'un serveur de paiement.

@@ -187,3 +187,17 @@ Object.assign(TRANSLATIONS, {
   'Communes et tarifs indisponibles. Réessayez.':['Communes and delivery fees are unavailable. Please retry.','تعذر تحميل البلديات وأسعار التوصيل. حاولي مجدداً.'],
   'Livraison indisponible pour cette commune.':['Delivery is unavailable for this commune.','التوصيل غير متوفر لهذه البلدية.']
 });
+
+Object.assign(TRANSLATIONS, {
+  'CATÉGORIES':['CATEGORIES','الفئات'],
+  'Bijoux et accessoires':['Jewellery and accessories','مجوهرات وإكسسوارات'],
+  'Chaussures et sacs':['Shoes and bags','أحذية وحقائب'],
+  'Robes grande taille':['Plus size dresses','فساتين بمقاسات كبيرة'],
+  'Sous-vêtements':['Underwear','ملابس داخلية'],
+  'Découvrez notre sélection.':['Explore our selection.','اكتشفي تشكيلتنا.'],
+  'Aucun produit pour le moment':['No products yet','لا توجد منتجات حالياً'],
+  'Cette catégorie sera bientôt disponible.':['This category is coming soon.','ستتوفر هذه الفئة قريباً.'],
+  'Rupture de stock':['Out of stock','نفد المخزون'],
+  'Plus que':['Only','بقي'],
+  'en stock':['in stock','في المخزون']
+});

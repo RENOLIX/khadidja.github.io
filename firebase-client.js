@@ -80,6 +80,8 @@ async function loadKhadidjaCatalog() {
         swatch: /^#[0-9a-f]{6}$/i.test(data.swatch || '') ? data.swatch : '#d8d8d8',
         sizes: Array.isArray(data.sizes) ? data.sizes.map(String) : [],
         price: Number(data.price || 0),
+        category: window.KB_CATEGORY(data.category).id,
+        stock: window.KB_STOCK(data),
         images: [String(data.cover || '/assets/robe-nude-face.jpg')],
         url: data.url && data.url.startsWith('/produit/') ? data.url : `/produit/?id=${encodeURIComponent(doc.id)}`,
         active: data.active !== false,
