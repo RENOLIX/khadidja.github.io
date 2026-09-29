@@ -6,6 +6,7 @@ checkoutPage = function () {
   html = html.replace('<label>E-mail <input name="email" type="email" autocomplete="email" maxlength="120" dir="ltr"></label>', '');
   html = html.replace('Votre demande s’ouvrira dans votre messagerie pour être envoyée à la boutique.', 'Votre commande sera enregistrée et visible par notre équipe.');
   html = html.replace('PRÉPARER LA COMMANDE', 'CONFIRMER LA COMMANDE');
+  if (typeof legalCheckoutNotice === 'function') html = html.replace('<button class="button button-dark checkout-submit"', legalCheckoutNotice() + '<button class="button button-dark checkout-submit"');
   html = html.replace('<input name="commune" autocomplete="address-level2" required maxlength="80">', '<select name="commune" id="checkout-commune" required disabled><option value="">Choisir une wilaya d’abord</option></select><small id="commune-feedback" aria-live="polite"></small><button type="button" id="retry-communes" hidden>Réessayer</button>');
   return html;
 };
@@ -94,6 +95,7 @@ setupCheckout = function () {
         notes: form.elements.notes.value.trim(),
         items, subtotal, shippingFee, total:subtotal+shippingFee,
         currency:'DZD', payment:'livraison', status:'nouvelle',
+        terms: {version:'2026-09-29', acceptedAt:KB.serverTime()},
         createdAt:KB.serverTime(), updatedAt:KB.serverTime()
       };
       const saved = await KB.db.collection('orders').add(order);
