@@ -247,12 +247,29 @@ async function saveProduct(event){
     notice('Produit enregistré et visible dans la boutique.');
   }catch(error){console.error(error);notice(error.message||'Enregistrement impossible.',true);button.disabled=false;button.textContent='ENREGISTRER LE PRODUIT'}
 }
+function confirmOrderDeletion(order){
+  return new Promise(resolve=>{
+    const previouslyFocused=document.activeElement,layer=document.createElement('div');
+    layer.className='delete-confirm-backdrop';
+    layer.innerHTML=`<section class="delete-confirm" role="alertdialog" aria-modal="true" aria-labelledby="delete-confirm-title" aria-describedby="delete-confirm-description"><span class="eyebrow">COMMANDE #${esc(order.id.slice(0,8))}</span><h2 id="delete-confirm-title">Supprimer cette commande ?</h2><p id="delete-confirm-description">La commande de <strong>${esc(order.customer?.name||'ce client')}</strong>, d’un montant de <strong>${money(order.total)}</strong>, sera supprimée définitivement de la boutique.${order.yalidine?.tracking?' Le colis Yalidine reste actif : cette suppression ne l’annule pas.':''}</p><div class="form-actions"><button type="button" class="ghost" data-delete-cancel>Annuler</button><button type="button" class="primary delete-confirm-submit" data-delete-confirm>SUPPRIMER LA COMMANDE</button></div></section>`;
+    const previousOverflow=document.body.style.overflow;
+    document.body.appendChild(layer);root.inert=true;document.body.style.overflow='hidden';
+    const finish=value=>{layer.remove();root.inert=false;document.body.style.overflow=previousOverflow;if(previouslyFocused?.isConnected)previouslyFocused.focus();resolve(value)};
+    layer.querySelector('[data-delete-cancel]').addEventListener('click',()=>finish(false));
+    layer.querySelector('[data-delete-confirm]').addEventListener('click',()=>finish(true));
+    layer.addEventListener('click',event=>{if(event.target===layer)finish(false)});
+    layer.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){event.preventDefault();finish(false)}
+      if(event.key==='Tab'){event.preventDefault();const buttons=[...layer.querySelectorAll('button')];const index=buttons.indexOf(document.activeElement);buttons[(index+(event.shiftKey?-1:1)+buttons.length)%buttons.length].focus()}
+    });
+    layer.querySelector('[data-delete-cancel]').focus();
+  });
+}
 async function deleteOrder(id){
   if(state.role!=='admin'||deletingOrder||yalidineBusy)return;
   const order=state.orders.find(item=>item.id===id);if(!order)return;
-  const shipment=order.yalidine?.tracking?'\nLe colis Yalidine reste actif : cette suppression ne l’annule pas.':'';
-  if(!confirm(`Supprimer définitivement la commande #${id.slice(0,8)} de ${order.customer?.name||'ce client'} (${money(order.total)}) ?${shipment}`))return;
   deletingOrder=id;
+  if(!await confirmOrderDeletion(order)||state.role!=='admin'){deletingOrder=null;return;}
   root.querySelectorAll('[data-order-delete],#yalidine-form button').forEach(button=>button.disabled=true);
   try{
     await KB.db.collection('orders').doc(id).delete();
