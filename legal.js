@@ -12,10 +12,10 @@ const LEGAL_LABELS = {
   intro: ['Des informations claires pour acheter en toute confiance.', 'Clear information to help you shop with confidence.', 'معلومات واضحة لتتسوقي بثقة.'],
   question: ['Une question concernant ces informations ?', 'Questions about this information?', 'هل لديك سؤال حول هذه المعلومات؟'],
   contact: ['CONTACTER LA BOUTIQUE', 'CONTACT THE STORE', 'تواصلي مع المتجر'],
-  bannerTitle: ['Votre confidentialité compte', 'Your privacy matters', 'خصوصيتك مهمة'],
+  bannerTitle: ['Cookies & confidentialité', 'Cookies & privacy', 'ملفات تعريف الارتباط والخصوصية'],
   bannerText: ['Nous utilisons des stockages nécessaires au panier, à la connexion et aux réglages que vous choisissez. Aucun traceur publicitaire ni de mesure d’audience n’est actuellement utilisé.', 'We use storage needed for your cart, sign-in and the settings you choose. No advertising or audience measurement trackers are currently used.', 'نستخدم التخزين اللازم للسلة وتسجيل الدخول والإعدادات التي تختارينها. لا نستخدم حالياً أدوات تتبع إعلانية أو لقياس الزيارات.'],
-  accept: ['Tout accepter', 'Accept all', 'قبول الكل'],
-  reject: ['Refuser les optionnels', 'Reject optional', 'رفض الاختيارية'],
+  accept: ['Accepter', 'Accept', 'قبول'],
+  reject: ['Refuser', 'Reject', 'رفض'],
   customize: ['Personnaliser', 'Customize', 'تخصيص'],
   save: ['ENREGISTRER MES CHOIX', 'SAVE MY CHOICES', 'حفظ اختياراتي'],
   close: ['Fermer', 'Close', 'إغلاق'],
@@ -51,7 +51,7 @@ const LEGAL_DOCUMENTS = {
   ],
   cookies: [
     [['Cookies et stockage local','Cookies and local storage','ملفات تعريف الارتباط والتخزين المحلي'], ['Un cookie est un petit fichier enregistré par un navigateur. Le site utilise aussi le stockage local et les mécanismes de stockage de Firebase : ces technologies remplissent des fonctions similaires et sont couvertes par cette politique.', 'A cookie is a small file saved by a browser. This site also uses local storage and Firebase storage mechanisms: these technologies serve similar functions and are covered by this policy.', 'ملف تعريف الارتباط ملف صغير يحفظه المتصفح. يستخدم الموقع أيضاً التخزين المحلي وآليات التخزين الخاصة بـ Firebase، وهي تقنيات تؤدي وظائف مشابهة وتشملها هذه السياسة.']],
-    [['Ce que le site enregistre','What the website stores','ما الذي يحفظه الموقع'], ['Le panier est mémorisé sous khadidja-cart-v2. La langue et la devise choisies sont conservées sous khadidja-language et khadidja-currency. Firebase peut conserver une session d’authentification pour les espaces connectés. Votre réponse au bandeau est enregistrée sous khadidja-cookie-consent-v1 pour 180 jours. Ces informations ne servent pas à vous suivre à des fins publicitaires.', 'The cart is saved under khadidja-cart-v2. Your language and currency choices are stored under khadidja-language and khadidja-currency. Firebase may retain an authentication session for signed-in areas. Your banner choice is saved under khadidja-cookie-consent-v1 for 180 days. This information is not used to track you for advertising.', 'تُحفظ السلة تحت khadidja-cart-v2، واللغة والعملة تحت khadidja-language وkhadidja-currency. قد تحفظ Firebase جلسة المصادقة للمساحات المتصلة. يُحفظ جوابك على الشريط تحت khadidja-cookie-consent-v1 لمدة 180 يوماً. لا تُستخدم هذه المعلومات لتتبعك لأغراض إعلانية.']],
+    [['Ce que le site enregistre','What the website stores','ما الذي يحفظه الموقع'], ['Le panier est mémorisé sous khadidja-cart-v2. La langue et la devise choisies sont conservées sous khadidja-language et khadidja-currency. Firebase peut conserver une session d’authentification pour les espaces connectés. Votre réponse au bandeau est enregistrée sous khadidja-cookie-consent-v1 pour 180 jours. Le bandeau est présenté à chaque nouvelle session de visite, puis masqué pendant la navigation après votre choix. Ces informations ne servent pas à vous suivre à des fins publicitaires.', 'The cart is saved under khadidja-cart-v2. Your language and currency choices are stored under khadidja-language and khadidja-currency. Firebase may retain an authentication session for signed-in areas. Your banner choice is saved under khadidja-cookie-consent-v1 for 180 days. The banner appears at the start of each new visit session, then stays hidden during navigation after your choice. This information is not used to track you for advertising.', 'تُحفظ السلة تحت khadidja-cart-v2، واللغة والعملة تحت khadidja-language وkhadidja-currency. قد تحفظ Firebase جلسة المصادقة للمساحات المتصلة. يُحفظ جوابك على الشريط تحت khadidja-cookie-consent-v1 لمدة 180 يوماً. يظهر الشريط في بداية كل جلسة زيارة جديدة، ثم يبقى مخفياً أثناء التصفح بعد اختيارك. لا تُستخدم هذه المعلومات لتتبعك لأغراض إعلانية.']],
     [['Technologies optionnelles','Optional technologies','التقنيات الاختيارية'], ['Aucun outil de mesure d’audience, pixel publicitaire ou traceur marketing n’est actuellement installé. Les catégories correspondantes sont donc indiquées comme non utilisées dans le panneau de préférences. Accepter le bandeau n’active aucun service publicitaire. Si de tels services sont ajoutés, une nouvelle version du consentement devra être demandée avant leur activation.', 'No audience measurement tools, advertising pixels or marketing trackers are currently installed. These categories are therefore marked as not in use in the preferences panel. Accepting the banner does not activate advertising services. If such services are added, a new consent version must be requested before they are enabled.', 'لا توجد حالياً أدوات لقياس الزيارات أو وحدات تتبع إعلانية أو تسويقية. تظهر هذه الفئات على أنها غير مستخدمة في لوحة التفضيلات. قبول الشريط لا يفعّل خدمات إعلانية. إذا أُضيفت هذه الخدمات، يجب طلب موافقة جديدة قبل تفعيلها.']],
     [['Modifier ou effacer vos choix','Change or clear your choices','تعديل اختياراتك أو حذفها'], ['Le lien « Gérer mes cookies » est disponible au bas de chaque page. Le refus des technologies optionnelles ne bloque pas l’achat. Vous pouvez également effacer les données du site dans votre navigateur ; cela peut supprimer le panier et vous déconnecter. Les réglages et le panier n’ont pas de date d’expiration automatique. Les technologies strictement nécessaires ne sont pas désactivées depuis le panneau.', 'The “Manage cookies” link is available at the bottom of every page. Rejecting optional technologies does not prevent shopping. You can also clear site data in your browser; this may clear your cart and sign you out. Settings and cart storage do not expire automatically. Strictly necessary technologies cannot be disabled in the panel.', 'يتوفر رابط «إدارة ملفات تعريف الارتباط» أسفل كل صفحة. رفض التقنيات الاختيارية لا يمنع الشراء. يمكنك أيضاً مسح بيانات الموقع في المتصفح؛ وقد يؤدي ذلك إلى حذف السلة وتسجيل الخروج. لا تنتهي صلاحية السلة والإعدادات تلقائياً. لا يمكن تعطيل التقنيات الضرورية من اللوحة.']]
   ],
@@ -95,8 +95,15 @@ function legalPage() {
 
 (() => {
   const key = 'khadidja-cookie-consent-v1', version = 1;
+  const sessionKey = 'khadidja-cookie-banner-dismissed-v1';
   const lifetime = 180 * 24 * 60 * 60 * 1000;
   let memoryChoice = null;
+  let memoryDismissed = false;
+  function shouldShowBanner() {
+    if (!readChoice()) return true;
+    if (memoryDismissed) return false;
+    try { return sessionStorage.getItem(sessionKey) !== '1'; } catch { return true; }
+  }
   function readChoice() {
     try {
       const value = JSON.parse(localStorage.getItem(key) || 'null') || memoryChoice;
@@ -108,7 +115,9 @@ function legalPage() {
     // There are no optional services. Accepting cannot silently enable future trackers.
     const choice = {version, decision, necessary:true, analytics:false, marketing:false, savedAt:Date.now()};
     memoryChoice = choice;
+    memoryDismissed = true;
     try { localStorage.setItem(key, JSON.stringify(choice)); } catch { /* Browsing still works if storage is unavailable. */ }
+    try { sessionStorage.setItem(sessionKey, '1'); } catch { /* Keep the choice for this page in memory. */ }
     document.querySelector('#cookie-banner')?.remove();
     const dialog = document.querySelector('#cookie-preferences');
     if (dialog?.open) dialog.close();
@@ -125,10 +134,19 @@ function legalPage() {
     document.querySelectorAll('[data-cookie-settings]').forEach(button=>button.addEventListener('click',openPreferences));
     let root = document.querySelector('#cookie-consent-root');
     if (!root) { root = document.createElement('div'); root.id='cookie-consent-root'; document.body.append(root); }
+    // Catalog renders must not remove an open preferences dialog or re-show a dismissed banner.
+    const language = currentLanguage();
+    if (root.dataset.language === language) return;
+    root.dataset.language = language;
+    root.lang = language;
+    root.dir = language === 'ar' ? 'rtl' : 'ltr';
     const t = legalText;
-    root.innerHTML = `<div id="cookie-status" class="cookie-sr-only" role="status" aria-live="polite"></div>${!readChoice()?`<section id="cookie-banner" class="cookie-banner" role="region" aria-labelledby="cookie-banner-title"><div><h2 id="cookie-banner-title">${t('bannerTitle')}</h2><p>${t('bannerText')} <a href="${link(LEGAL_ROUTES.cookies)}">${t('cookies')}</a></p></div><div class="cookie-actions"><button type="button" data-cookie-decision="accepted">${t('accept')}</button><button type="button" data-cookie-decision="rejected">${t('reject')}</button><button type="button" class="cookie-customize" data-cookie-settings>${t('customize')}</button></div></section>`:''}<dialog id="cookie-preferences" class="cookie-dialog" aria-labelledby="cookie-preferences-title"><div class="cookie-dialog-head"><h2 id="cookie-preferences-title">${t('settingsTitle')}</h2><button type="button" id="cookie-close" aria-label="${t('close')}">${svg('close')}</button></div><p>${t('settingsText')}</p>${[['necessary','necessaryText','active'],['analytics','analyticsText','unused'],['ads','adsText','unused']].map(([title,description,state])=>`<section class="cookie-category"><div><h3>${t(title)}</h3><p>${t(description)}</p></div><span class="cookie-category-state">${t(state)}</span></section>`).join('')}<a class="cookie-policy-link" href="${link(LEGAL_ROUTES.cookies)}">${t('cookies')}</a><div class="cookie-dialog-actions"><button type="button" data-cookie-decision="accepted">${t('accept')}</button><button type="button" data-cookie-decision="rejected">${t('reject')}</button><button type="button" data-cookie-decision="custom">${t('save')}</button></div></dialog>`;
+    root.innerHTML = `<div id="cookie-status" class="cookie-sr-only" role="status" aria-live="polite"></div>${shouldShowBanner()?`<section id="cookie-banner" class="cookie-banner" role="region" aria-labelledby="cookie-banner-title"><div><h2 id="cookie-banner-title">${t('bannerTitle')}</h2><p>${t('bannerText')} <a href="${link(LEGAL_ROUTES.cookies)}">${t('cookies')}</a></p></div><div class="cookie-actions"><button type="button" data-cookie-decision="accepted">${t('accept')}</button><button type="button" data-cookie-decision="rejected">${t('reject')}</button><button type="button" class="cookie-customize" data-cookie-settings>${t('customize')}</button></div></section>`:''}<dialog id="cookie-preferences" class="cookie-dialog" aria-labelledby="cookie-preferences-title"><div class="cookie-dialog-head"><h2 id="cookie-preferences-title">${t('settingsTitle')}</h2><button type="button" id="cookie-close" aria-label="${t('close')}">${svg('close')}</button></div><p>${t('settingsText')}</p>${[['necessary','necessaryText','active'],['analytics','analyticsText','unused'],['ads','adsText','unused']].map(([title,description,state])=>`<section class="cookie-category"><div><h3>${t(title)}</h3><p>${t(description)}</p></div><span class="cookie-category-state">${t(state)}</span></section>`).join('')}<a class="cookie-policy-link" href="${link(LEGAL_ROUTES.cookies)}">${t('cookies')}</a><div class="cookie-dialog-actions"><button type="button" data-cookie-decision="accepted">${t('accept')}</button><button type="button" data-cookie-decision="rejected">${t('reject')}</button><button type="button" data-cookie-decision="custom">${t('save')}</button></div></dialog>`;
     root.querySelectorAll('[data-cookie-decision]').forEach(button=>button.addEventListener('click',()=>saveChoice(button.dataset.cookieDecision)));
     root.querySelectorAll('[data-cookie-settings]').forEach(button=>button.addEventListener('click',openPreferences));
     root.querySelector('#cookie-close').addEventListener('click',()=>root.querySelector('dialog').close());
   };
+  // Show the banner immediately; do not wait for the remote product catalog.
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', window.setupLegal, {once:true});
+  else window.setupLegal();
 })();
