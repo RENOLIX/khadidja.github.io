@@ -110,9 +110,9 @@ function render() {
   const productId=document.body.dataset.productId || new URLSearchParams(location.search).get('id');
   const p=byId(productId);
   const missingProduct=`<main class="simple-page section-wrap"><h1>${window.KB_CATALOG_READY?'Robe indisponible':'Chargement de la robe…'}</h1><a class="button button-dark" href="/robes-de-soiree/">VOIR LES ROBES</a></main>`;
-  let body=page==='product'?(p&&p.active!==false?productPage(p):missingProduct):page==='cart'?cartPage():page==='checkout'?checkoutPage():page==='thanks'?thanksPage():page==='collection'?collectionPage():page==='new'?newPage():page==='guide'?guidePage():page==='about'?aboutPage():page==='help'?helpPage():page==='profile'?profilePage():page==='contact'?contactPage():homePage();
+  let body=page==='legal'?legalPage():page==='product'?(p&&p.active!==false?productPage(p):missingProduct):page==='cart'?cartPage():page==='checkout'?checkoutPage():page==='thanks'?thanksPage():page==='collection'?collectionPage():page==='new'?newPage():page==='guide'?guidePage():page==='about'?aboutPage():page==='help'?helpPage():page==='profile'?profilePage():page==='contact'?contactPage():homePage();
   document.querySelector('#app').innerHTML=(shellHeader()+body+shellFooter()).replace(/(href|src)="\//g,`$1="${BASE}/`).replace(/url\('\/assets/g,`url('${BASE}/assets`);
-  updateCount();setupShell();if(page==='home')setupHero();if(page==='product'&&p&&p.active!==false)setupProduct(p);if(page==='cart')setupCart();if(page==='checkout')setupCheckout();if(typeof setupPro==='function')setupPro();
+  updateCount();setupShell();if(page==='home')setupHero();if(page==='product'&&p&&p.active!==false)setupProduct(p);if(page==='cart')setupCart();if(page==='checkout')setupCheckout();if(typeof setupPro==='function')setupPro();if(typeof setupLegal==='function')setupLegal();
 }
 document.addEventListener('DOMContentLoaded',()=>{
   if (window.KB_CATALOG_READY === false) return;
