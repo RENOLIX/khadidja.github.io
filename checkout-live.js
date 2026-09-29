@@ -21,45 +21,67 @@ setupCheckout = function () {
   const commune = form.elements.commune;
   const communeFeedback = form.querySelector('#commune-feedback');
   const retryCommunes = form.querySelector('#retry-communes');
-  let communeList = [], communeGeneration = 0;
+  const submitButton = form.querySelector('.checkout-submit');
+  let communeList = [], communeGeneration = 0, deliveryFees = null, loadingDelivery = false, submitting = false;
+  function selectedFee() {
+    return deliveryFees?.communes.find(c => c.id === Number(commune.value));
+  }
   async function updateCommunes() {
     const generation = ++communeGeneration;
-    communeList = []; commune.disabled = true; retryCommunes.hidden = true;
-    commune.replaceChildren(new Option(wilaya.value === '' ? 'Choisir une wilaya d’abord' : 'Chargement des communes…', ''));
+    communeList = []; deliveryFees = null; commune.disabled = true; retryCommunes.hidden = true;
+    loadingDelivery = wilaya.value !== '';
+    commune.replaceChildren(new Option(tr(wilaya.value === '' ? 'Choisir une wilaya d’abord' : 'Chargement des communes et tarifs…'), ''));
     communeFeedback.textContent = '';
+    update();
     if (wilaya.value === '') return;
     try {
-      const list = await KB.yalidine.communes(Number(wilaya.value) + 1);
+      const wilayaId = Number(wilaya.value) + 1;
+      const [list, fees] = await Promise.all([KB.yalidine.communes(wilayaId), KB.yalidine.fees(wilayaId)]);
       if (generation !== communeGeneration || !form.isConnected) return;
+      if (fees?.wilaya !== wilayaId || fees?.source !== 'yalidine' || !Array.isArray(fees.communes)) throw new Error('Tarifs invalides.');
+      deliveryFees = fees;
       communeList = list;
-      commune.replaceChildren(new Option('Choisir une commune', ''));
+      commune.replaceChildren(new Option(tr('Choisir une commune'), ''));
       list.forEach(c => commune.add(new Option(c.name, String(c.id))));
       commune.disabled = false;
     } catch (error) {
       if (generation !== communeGeneration || !form.isConnected) return;
-      communeFeedback.textContent = error.message; retryCommunes.hidden = false;
+      communeFeedback.textContent = tr('Communes et tarifs indisponibles. Réessayez.'); retryCommunes.hidden = false;
+    } finally {
+      if (generation === communeGeneration && form.isConnected) { loadingDelivery = false; update(); }
     }
   }
   wilaya.addEventListener('change', updateCommunes);
   retryCommunes.addEventListener('click', updateCommunes);
   updateCommunes();
   function update() {
-    const selected = wilaya.value === '' ? null : SHIPPING_WILAYAS[Number(wilaya.value)];
-    desk.disabled = !!selected && selected.desk === 0;
-    if (desk.disabled && desk.checked) home.checked = true;
-    document.querySelector('#home-price').textContent = selected ? `${selected.home} DA` : '—';
-    document.querySelector('#desk-price').textContent = selected ? (selected.desk ? `${selected.desk} DA` : 'Indisponible') : '—';
+    const selected = selectedFee();
+    const available = fee => Number.isInteger(fee) && fee >= 0;
+    home.disabled = !available(selected?.home);
+    desk.disabled = !available(selected?.desk);
+    if (desk.disabled && !home.disabled) home.checked = true;
+    if (home.disabled && !desk.disabled) desk.checked = true;
+    document.querySelector('#home-price').textContent = selected ? (available(selected.home) ? money(selected.home) : tr('Indisponible')) : '—';
+    document.querySelector('#desk-price').textContent = selected ? (available(selected.desk) ? money(selected.desk) : tr('Indisponible')) : '—';
+    document.querySelector('#home-price').dir = document.querySelector('#desk-price').dir = 'ltr';
     const isDesk = desk.checked;
     form.querySelector('#address-field').hidden = isDesk;
     form.elements.address.required = !isDesk;
     form.querySelector('#office-field').hidden = !isDesk;
-    document.querySelector('#shipping-total').textContent = selected ? `${isDesk ? selected.desk : selected.home} DA` : 'Choisir une wilaya';
-    document.querySelector('#grand-total').textContent = selected ? money(cartTotal() + (isDesk ? selected.desk : selected.home)) : '—';
+    const fee = isDesk ? selected?.desk : selected?.home;
+    const pending = loadingDelivery ? tr('Chargement des tarifs…') : tr(wilaya.value === '' ? 'Choisir une wilaya' : 'Choisir une commune');
+    document.querySelector('#shipping-total').textContent = available(fee) ? money(fee) : (selected ? tr('Indisponible') : pending);
+    document.querySelector('#shipping-total').dir = 'ltr';
+    document.querySelector('#grand-total').textContent = available(fee) ? money(cartTotal() + fee) : '—';
+    submitButton.disabled = submitting || loadingDelivery || !available(fee);
+    if (selected && !available(selected.home) && !available(selected.desk)) communeFeedback.textContent = tr('Livraison indisponible pour cette commune.');
+    else if (deliveryFees) communeFeedback.textContent = '';
   }
-  [wilaya, home, desk].forEach(element => element.addEventListener('change', update));
+  [wilaya, commune, home, desk].forEach(element => element.addEventListener('change', update));
   update();
   form.addEventListener('submit', async event => {
     event.preventDefault();
+    if (submitting) return;
     const phone = form.elements.phone.value.trim();
     if (!/^(?:0[567]\d{8}|\+213[567]\d{8})$/.test(phone)) {
       form.elements.phone.setCustomValidity('Numéro algérien invalide.');
@@ -70,7 +92,13 @@ setupCheckout = function () {
     if (!form.reportValidity()) return;
     const selectedCommune = communeList.find(c => c.id === Number(commune.value) && c.wilayaId === Number(wilaya.value) + 1);
     if (!selectedCommune) { result.hidden = false; result.textContent = 'Choisissez votre commune dans la liste avant de confirmer.'; return; }
+    const shippingFee = desk.checked ? selectedFee()?.desk : selectedFee()?.home;
+    if (loadingDelivery || !Number.isInteger(shippingFee) || shippingFee < 0) { result.hidden = false; result.textContent = tr('Communes et tarifs indisponibles. Réessayez.'); return; }
     const button = form.querySelector('.checkout-submit');
+    submitting = true;
+    const fields = [...form.querySelectorAll('input,select,textarea')];
+    const disabledBefore = fields.map(field => field.disabled);
+    fields.forEach(field => field.disabled = true);
     button.disabled = true;
     button.textContent = 'ENREGISTREMENT…';
     result.hidden = false;
@@ -78,9 +106,7 @@ setupCheckout = function () {
     try {
       if (!window.KB) throw new Error('La connexion aux commandes est indisponible. Réessayez dans un instant.');
       const credential = KB.auth.currentUser || (await KB.auth.signInAnonymously()).user;
-      const selected = SHIPPING_WILAYAS[Number(wilaya.value)];
       const isDesk = desk.checked;
-      const shippingFee = isDesk ? selected.desk : selected.home;
       const items = cartItems().map(item => {
         const product = byId(item.id);
         if (!product) throw new Error('Un article du panier n’est plus disponible. Actualisez la page.');
@@ -94,6 +120,7 @@ setupCheckout = function () {
         delivery: {wilayaCode:String(Number(wilaya.value)+1).padStart(2,'0'), wilaya:selectedCommune.wilaya, commune:selectedCommune.name, communeId:selectedCommune.id, method:isDesk?'bureau':'domicile', address:isDesk?'':form.elements.address.value.trim(), office:isDesk?form.elements.office.value.trim():''},
         notes: form.elements.notes.value.trim(),
         items, subtotal, shippingFee, total:subtotal+shippingFee,
+        shippingRate: {source:'yalidine', service:'express', fromWilaya:16, toWilaya:deliveryFees.wilaya, communeId:selectedCommune.id, fetchedAt:deliveryFees.fetchedAt},
         currency:'DZD', payment:'livraison', status:'nouvelle',
         terms: {version:'2026-09-29', acceptedAt:KB.serverTime()},
         createdAt:KB.serverTime(), updatedAt:KB.serverTime()
@@ -104,9 +131,12 @@ setupCheckout = function () {
       location.href = link(`/merci/?ref=${encodeURIComponent(saved.id)}`);
     } catch (error) {
       console.error('Commande Firebase', error);
+      submitting = false;
+      fields.forEach((field, index) => field.disabled = disabledBefore[index]);
       result.innerHTML = `<strong>La commande n’a pas été enregistrée.</strong><p>${escapeHtml(error.message || 'Veuillez réessayer.')}</p>`;
       button.disabled = false;
       button.innerHTML = `CONFIRMER LA COMMANDE ${svg('arrow')}`;
+      update();
     }
   });
 };

@@ -11,6 +11,7 @@ function doGet(e) {
     if (ALLOWED_ORIGINS.indexOf(origin) < 0) throw new Error('Demande non autorisée.');
     if (e.parameter.mode === 'centers') result = {type: 'yalidine-centers', ok: true, centers: listCenters_()};
     else if (e.parameter.mode === 'communes') result = {type: 'yalidine-communes', ok: true, communes: listCommunes_(e.parameter.wilaya)};
+    else if (e.parameter.mode === 'fees') result = {type: 'yalidine-fees', ok: true, fees: listFees_(e.parameter.wilaya)};
     else throw new Error('Mode inconnu.');
   } catch (error) {
     result = {type: 'yalidine-' + e.parameter.mode, ok: false, error: String(error.message || error)};
@@ -90,6 +91,27 @@ function listCommunes_(wilaya) {
   if (!all.length) throw new Error('Aucune commune livrable pour cette wilaya.');
   cache.put(key, JSON.stringify(all), 21600);
   return all;
+}
+
+function listFees_(wilaya) {
+  const id = Number(wilaya);
+  if (!Number.isInteger(id) || id < 1 || id > 58) throw new Error('Wilaya invalide.');
+  const cache = CacheService.getScriptCache(), key = 'fees_express_alger_v1_' + id;
+  const cached = cache.get(key);
+  if (cached) return JSON.parse(cached);
+  const props = PropertiesService.getScriptProperties();
+  const headers = {'X-API-ID': props.getProperty('YALIDINE_API_ID'), 'X-API-TOKEN': props.getProperty('YALIDINE_API_TOKEN')};
+  if (!headers['X-API-ID'] || !headers['X-API-TOKEN']) throw new Error('Accès Yalidine non configuré.');
+  const response = UrlFetchApp.fetch('https://api.yalidine.app/v1/fees/?from_wilaya_id=16&to_wilaya_id=' + id, {headers: headers, muteHttpExceptions: true});
+  if (response.getResponseCode() !== 200) throw new Error('Tarifs Yalidine indisponibles (HTTP ' + response.getResponseCode() + '). Réessayez.');
+  const body = JSON.parse(response.getContentText());
+  if (!body.per_commune || typeof body.per_commune !== 'object') throw new Error('Tarifs Yalidine invalides.');
+  const amount = value => value === null || value === undefined || value === '' ? null : (Number.isInteger(Number(value)) && Number(value) >= 0 ? Number(value) : null);
+  const communes = Object.values(body.per_commune).map(c => ({id: Number(c.commune_id), name: String(c.commune_name || ''), home: amount(c.express_home), desk: amount(c.express_desk)})).filter(c => Number.isInteger(c.id));
+  if (!communes.length) throw new Error('Aucun tarif Yalidine disponible pour cette wilaya.');
+  const fees = {source: 'yalidine', service: 'express', fromWilaya: 16, wilaya: id, fetchedAt: new Date().toISOString(), communes: communes};
+  cache.put(key, JSON.stringify(fees), 900);
+  return fees;
 }
 
 function normalizeName_(value) {

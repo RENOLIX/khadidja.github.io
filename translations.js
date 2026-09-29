@@ -176,3 +176,12 @@ Object.assign(TRANSLATIONS,{
   'Envoyez-nous vos tours de poitrine, taille et hanches, ainsi que le modèle choisi. Nous vous aiderons à sélectionner parmi les tailles 46, 48 et 50.':['Send us your bust, waist and hip measurements and the dress you want. We will help you choose among sizes 46, 48 and 50.','أرسلي لنا قياسات الصدر والخصر والوركين والموديل المختار، وسنساعدك في الاختيار بين 46 و48 و50.'],
   'DÉCOUVRIR LES ROBES':['DISCOVER THE DRESSES','اكتشفي الفساتين']
 });
+
+Object.assign(TRANSLATIONS, {
+  'Choisir une wilaya d’abord':['Choose a wilaya first','اختاري الولاية أولاً'],
+  'Choisir une commune':['Choose a commune','اختاري البلدية'],
+  'Chargement des communes et tarifs…':['Loading communes and delivery fees…','جارٍ تحميل البلديات وأسعار التوصيل…'],
+  'Chargement des tarifs…':['Loading delivery fees…','جارٍ تحميل أسعار التوصيل…'],
+  'Communes et tarifs indisponibles. Réessayez.':['Communes and delivery fees are unavailable. Please retry.','تعذر تحميل البلديات وأسعار التوصيل. حاولي مجدداً.'],
+  'Livraison indisponible pour cette commune.':['Delivery is unavailable for this commune.','التوصيل غير متوفر لهذه البلدية.']
+});

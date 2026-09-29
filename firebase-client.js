@@ -51,7 +51,7 @@ KB.yalidine = (() => {
     if (!reads.has(key)) reads.set(key, request(mode, values).catch(error => { reads.delete(key); throw error; }));
     return reads.get(key);
   }
-  return {request, communes: wilaya => read('communes', {wilaya}).then(r => r.communes), centers: () => read('centers').then(r => r.centers)};
+  return {request, communes: wilaya => read('communes', {wilaya}).then(r => r.communes), fees: wilaya => request('fees', {wilaya}).then(r => r.fees), centers: () => read('centers').then(r => r.centers)};
 })();
 
 async function loadKhadidjaCatalog() {
