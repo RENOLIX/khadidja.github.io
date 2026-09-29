@@ -51,7 +51,13 @@ KB.yalidine = (() => {
     if (!reads.has(key)) reads.set(key, request(mode, values).catch(error => { reads.delete(key); throw error; }));
     return reads.get(key);
   }
-  return {request, communes: wilaya => read('communes', {wilaya}).then(r => r.communes), fees: wilaya => request('fees', {wilaya}).then(r => r.fees), centers: () => read('centers').then(r => r.centers)};
+  function localCommunes(wilaya) {
+    const id = Number(wilaya);
+    const list = window.KB_COMMUNES?.[id];
+    if (!Number.isInteger(id) || id < 1 || id > 58 || !Array.isArray(list)) throw new Error('Liste des communes indisponible. Actualisez la page.');
+    return list;
+  }
+  return {request, localCommunes, communes: async wilaya => localCommunes(wilaya), fees: wilaya => request('fees', {wilaya}).then(r => r.fees), centers: () => read('centers').then(r => r.centers)};
 })();
 
 async function loadKhadidjaCatalog() {

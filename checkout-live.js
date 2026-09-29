@@ -28,25 +28,31 @@ setupCheckout = function () {
   }
   async function updateCommunes() {
     const generation = ++communeGeneration;
+    const previousCommune = commune.value;
     communeList = []; deliveryFees = null; commune.disabled = true; retryCommunes.hidden = true;
-    loadingDelivery = wilaya.value !== '';
-    commune.replaceChildren(new Option(tr(wilaya.value === '' ? 'Choisir une wilaya d’abord' : 'Chargement des communes et tarifs…'), ''));
+    loadingDelivery = false;
+    commune.replaceChildren(new Option(tr('Choisir une wilaya d’abord'), ''));
     communeFeedback.textContent = '';
     update();
     if (wilaya.value === '') return;
     try {
       const wilayaId = Number(wilaya.value) + 1;
-      const [list, fees] = await Promise.all([KB.yalidine.communes(wilayaId), KB.yalidine.fees(wilayaId)]);
+      const list = KB.yalidine.localCommunes(wilayaId);
+      communeList = list;
+      commune.replaceChildren(new Option(tr(list.length ? 'Choisir une commune' : 'Aucune commune livrable dans cette wilaya.'), ''));
+      list.forEach(c => commune.add(new Option(c.name, String(c.id))));
+      if (!list.length) { update(); return; }
+      commune.disabled = false;
+      if (list.some(c => String(c.id) === previousCommune)) commune.value = previousCommune;
+      loadingDelivery = true;
+      update();
+      const fees = await KB.yalidine.fees(wilayaId);
       if (generation !== communeGeneration || !form.isConnected) return;
       if (fees?.wilaya !== wilayaId || fees?.source !== 'yalidine' || !Array.isArray(fees.communes)) throw new Error('Tarifs invalides.');
       deliveryFees = fees;
-      communeList = list;
-      commune.replaceChildren(new Option(tr('Choisir une commune'), ''));
-      list.forEach(c => commune.add(new Option(c.name, String(c.id))));
-      commune.disabled = false;
     } catch (error) {
       if (generation !== communeGeneration || !form.isConnected) return;
-      communeFeedback.textContent = tr('Communes et tarifs indisponibles. Réessayez.'); retryCommunes.hidden = false;
+      communeFeedback.textContent = tr('Tarifs indisponibles. Réessayez.'); retryCommunes.hidden = false;
     } finally {
       if (generation === communeGeneration && form.isConnected) { loadingDelivery = false; update(); }
     }

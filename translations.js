@@ -178,6 +178,8 @@ Object.assign(TRANSLATIONS,{
 });
 
 Object.assign(TRANSLATIONS, {
+  'Aucune commune livrable dans cette wilaya.':['No deliverable commune in this wilaya.','لا توجد بلدية متاحة للتوصيل في هذه الولاية.'],
+  'Tarifs indisponibles. Réessayez.':['Delivery fees are unavailable. Please retry.','أسعار التوصيل غير متاحة. حاولي مجدداً.'],
   'Choisir une wilaya d’abord':['Choose a wilaya first','اختاري الولاية أولاً'],
   'Choisir une commune':['Choose a commune','اختاري البلدية'],
   'Chargement des communes et tarifs…':['Loading communes and delivery fees…','جارٍ تحميل البلديات وأسعار التوصيل…'],
