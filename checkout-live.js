@@ -6,6 +6,7 @@ checkoutPage = function () {
   html = html.replace('<label>E-mail <input name="email" type="email" autocomplete="email" maxlength="120" dir="ltr"></label>', '');
   html = html.replace('Votre demande s’ouvrira dans votre messagerie pour être envoyée à la boutique.', 'Votre commande sera enregistrée et visible par notre équipe.');
   html = html.replace('PRÉPARER LA COMMANDE', 'CONFIRMER LA COMMANDE');
+  html = html.replace('<input name="commune" autocomplete="address-level2" required maxlength="80">', '<select name="commune" id="checkout-commune" required disabled><option value="">Choisir une wilaya d’abord</option></select><small id="commune-feedback" aria-live="polite"></small><button type="button" id="retry-communes" hidden>Réessayer</button>');
   return html;
 };
 
@@ -16,6 +17,31 @@ setupCheckout = function () {
   const home = form.querySelector('[value="home"]');
   const desk = form.querySelector('[value="desk"]');
   const result = document.querySelector('#checkout-result');
+  const commune = form.elements.commune;
+  const communeFeedback = form.querySelector('#commune-feedback');
+  const retryCommunes = form.querySelector('#retry-communes');
+  let communeList = [], communeGeneration = 0;
+  async function updateCommunes() {
+    const generation = ++communeGeneration;
+    communeList = []; commune.disabled = true; retryCommunes.hidden = true;
+    commune.replaceChildren(new Option(wilaya.value === '' ? 'Choisir une wilaya d’abord' : 'Chargement des communes…', ''));
+    communeFeedback.textContent = '';
+    if (wilaya.value === '') return;
+    try {
+      const list = await KB.yalidine.communes(Number(wilaya.value) + 1);
+      if (generation !== communeGeneration || !form.isConnected) return;
+      communeList = list;
+      commune.replaceChildren(new Option('Choisir une commune', ''));
+      list.forEach(c => commune.add(new Option(c.name, String(c.id))));
+      commune.disabled = false;
+    } catch (error) {
+      if (generation !== communeGeneration || !form.isConnected) return;
+      communeFeedback.textContent = error.message; retryCommunes.hidden = false;
+    }
+  }
+  wilaya.addEventListener('change', updateCommunes);
+  retryCommunes.addEventListener('click', updateCommunes);
+  updateCommunes();
   function update() {
     const selected = wilaya.value === '' ? null : SHIPPING_WILAYAS[Number(wilaya.value)];
     desk.disabled = !!selected && selected.desk === 0;
@@ -41,6 +67,8 @@ setupCheckout = function () {
       return;
     }
     if (!form.reportValidity()) return;
+    const selectedCommune = communeList.find(c => c.id === Number(commune.value) && c.wilayaId === Number(wilaya.value) + 1);
+    if (!selectedCommune) { result.hidden = false; result.textContent = 'Choisissez votre commune dans la liste avant de confirmer.'; return; }
     const button = form.querySelector('.checkout-submit');
     button.disabled = true;
     button.textContent = 'ENREGISTREMENT…';
@@ -62,7 +90,7 @@ setupCheckout = function () {
       const order = {
         customerUid: credential.uid,
         customer: {name:form.elements.name.value.trim(), phone},
-        delivery: {wilayaCode:String(Number(wilaya.value)+1).padStart(2,'0'), wilaya:selected.name, commune:form.elements.commune.value.trim(), method:isDesk?'bureau':'domicile', address:isDesk?'':form.elements.address.value.trim(), office:isDesk?form.elements.office.value.trim():''},
+        delivery: {wilayaCode:String(Number(wilaya.value)+1).padStart(2,'0'), wilaya:selectedCommune.wilaya, commune:selectedCommune.name, communeId:selectedCommune.id, method:isDesk?'bureau':'domicile', address:isDesk?'':form.elements.address.value.trim(), office:isDesk?form.elements.office.value.trim():''},
         notes: form.elements.notes.value.trim(),
         items, subtotal, shippingFee, total:subtotal+shippingFee,
         currency:'DZD', payment:'livraison', status:'nouvelle',

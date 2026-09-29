@@ -1,25 +1,7 @@
 const root = document.querySelector('#admin-root');
 const SITE_BASE = location.hostname.endsWith('github.io') ? '/khadidja.github.io' : '';
-const YALIDINE_RELAY_URL = 'https://script.google.com/macros/s/AKfycbyRVMZuK2GzQjsklwFXGYJnMfuU-GfqTrg3VBY98T-yhUbkUfyDw9MYT83b4WO46tSU/exec';
-let yalidineCentersPromise;
-function loadYalidineCenters(){
-  if(yalidineCentersPromise)return yalidineCentersPromise;
-  yalidineCentersPromise=new Promise((resolve,reject)=>{
-    const frame=document.createElement('iframe');frame.hidden=true;
-    let timer;
-    function finish(error,centers){clearTimeout(timer);window.removeEventListener('message',onMessage);frame.remove();if(error){yalidineCentersPromise=null;reject(error)}else resolve(centers)}
-    function onMessage(message){
-      if(!['https://script.googleusercontent.com','https://script.google.com'].includes(message.origin)||message.data?.type!=='yalidine-centers')return;
-      if(!message.data.ok||!Array.isArray(message.data.centers))finish(new Error(message.data.error||'Bureaux Yalidine indisponibles.'));
-      else finish(null,message.data.centers);
-    }
-    window.addEventListener('message',onMessage);
-    timer=setTimeout(()=>finish(new Error('Les bureaux Yalidine ne répondent pas. Réessayez.')),8000);
-    frame.src=`${YALIDINE_RELAY_URL}?mode=centers&origin=${encodeURIComponent(location.origin)}`;
-    document.body.append(frame);
-  });
-  return yalidineCentersPromise;
-}
+function loadYalidineCenters(){ return KB.yalidine.centers(); }
+let yalidineBusy = false;
 const sizesAvailable = Array.from({length:13}, (_,i) => String(34+i*2));
 const statuses = {nouvelle:'Nouvelle', expediee:'Expédiée', livree:'Livrée', annulee:'Annulée', injoignable:'Injoignable'};
 const state = {user:null, role:null, tab:'dashboard', orderId:null, products:[], orders:[], staff:[], editor:null, editorImages:[], stopOrders:null, busy:false};
@@ -74,7 +56,7 @@ function orderDetailView(order){
   const items=(order.items||[]).map(item=>{const product=state.products.find(p=>p.id===item.productId);return `<div class="order-line"><img src="${image(product?.cover||'')}" alt=""><div><strong>${esc(item.quantity)} × ${esc(item.name)}</strong><span>${esc(item.color)} · Taille ${esc(item.size)}</span></div><b>${money(item.unitPrice*item.quantity)}</b></div>`}).join('');
   const canShip=state.role==='admin'&&order.currency==='DZD'&&order.payment==='livraison'&&['nouvelle','injoignable'].includes(order.status);
   const bureauFields=delivery.method==='bureau'?`<div class="form-grid"><label class="field">Ville du bureau<select id="yalidine-city" required disabled><option value="">Chargement des villes…</option></select></label><label class="field">Bureau Yalidine<select id="yalidine-center" required disabled><option value="">Choisir une ville</option></select></label></div><p class="note" id="yalidine-centers-feedback" aria-live="polite">Chargement des bureaux Yalidine…</p>`:'';
-  const yalidine=order.yalidine?.tracking?`<div class="yalidine-panel"><strong>Expédition Yalidine</strong><p>Numéro de suivi : <strong dir="ltr">${esc(order.yalidine.tracking)}</strong></p></div>`:canShip?`<div class="yalidine-panel"><strong>Créer un envoi Yalidine</strong><p class="note">Les coordonnées, les articles et le montant sont repris de cette commande.</p><form id="yalidine-form">${bureauFields}<button class="primary" type="submit">ENVOYER À YALIDINE</button></form></div>`:'';
+  const yalidine=order.yalidine?.tracking?`<div class="yalidine-panel"><strong>Expédition Yalidine</strong><p>Numéro de suivi : <strong dir="ltr">${esc(order.yalidine.tracking)}</strong></p></div>`:canShip?`<div class="yalidine-panel"><strong>Créer un envoi Yalidine</strong><p class="note">Les coordonnées, les articles et le montant sont repris de cette commande.</p><form id="yalidine-form">${bureauFields}${delivery.method!=="bureau"?'<label class="field">Commune Yalidine<select id="yalidine-commune" required disabled><option value="">Chargement des communes…</option></select></label><p class="note" id="yalidine-commune-feedback" aria-live="polite"></p>':""}<button class="ghost" type="button" id="validate-yalidine">VÉRIFIER LES INFORMATIONS</button> <button class="primary" type="submit">ENVOYER À YALIDINE</button></form></div>`:'';
   return `${title('SUIVI DES ACHATS',`Commande #${esc(order.id.slice(0,8))}`,`<button class="ghost" id="back-orders">← Toutes les commandes</button>`)}<article class="order-card order-detail-page"><div class="order-head"><div><span class="order-meta">${esc(when(order.createdAt))}</span><h3>${esc(customer.name||'Client')}</h3><p class="order-meta">${esc(customer.phone||'')} · ${esc(delivery.wilaya||'')}</p></div><span class="status ${esc(order.status)}">${statuses[order.status]||esc(order.status)}</span></div><div class="order-columns"><div><strong>Articles</strong><div class="order-lines">${items}</div><p>Sous-total : ${money(order.subtotal)}<br>Livraison : ${money(order.shippingFee)}<br><strong>Total : ${money(order.total)}</strong></p></div><div><strong>Livraison ${delivery.method==='bureau'?'en bureau':'à domicile'}</strong><p>${esc(delivery.wilayaCode||'')} ${esc(delivery.wilaya||'')} · ${esc(delivery.commune||'')}<br>${esc(delivery.method==='bureau'?delivery.office||'':delivery.address||'')}</p>${order.notes?`<p>Note : ${esc(order.notes)}</p>`:''}${yalidine}</div></div><form class="order-edit card" data-order-edit="${esc(order.id)}"><h4>Modifier les informations</h4><div class="form-grid"><label class="field">Nom<input name="name" value="${esc(customer.name)}" required></label><label class="field">Téléphone<input name="phone" value="${esc(customer.phone)}" required dir="ltr"></label><label class="field">Wilaya<input name="wilaya" value="${esc(delivery.wilaya)}" required></label><label class="field">Commune<input name="commune" value="${esc(delivery.commune)}" required></label><label class="field full">Adresse<input name="address" value="${esc(delivery.address||delivery.office||'')}"></label><label class="field full">Notes<textarea name="notes" rows="2">${esc(order.notes||'')}</textarea></label></div><div class="order-foot"><label class="field">Statut <select data-order-status="${esc(order.id)}">${Object.entries(statuses).map(([key,value])=>`<option value="${key}" ${order.status===key?'selected':''}>${value}</option>`).join('')}</select></label><button class="primary" type="submit">ENREGISTRER LES MODIFICATIONS</button></div></form></article>`;
 }
 function orderCards(orders){return orders.length?orders.map(order=>{
@@ -96,9 +78,25 @@ function profileView(){
 async function saveOrderEdit(event){
   event.preventDefault(); const form=event.currentTarget, id=form.dataset.orderEdit, order=state.orders.find(item=>item.id===id); if(!order)return;
   const button=form.querySelector('button[type="submit"]'); button.disabled=true;
-  try { const bureau=order.delivery?.method==='bureau'; await KB.db.collection('orders').doc(id).update({customer:{...(order.customer||{}),name:form.elements.name.value.trim(),phone:form.elements.phone.value.trim()},delivery:{...(order.delivery||{}),wilaya:form.elements.wilaya.value.trim(),commune:form.elements.commune.value.trim(),address:bureau?'':form.elements.address.value.trim(),office:bureau?form.elements.address.value.trim():''},notes:form.elements.notes.value.trim(),updatedAt:KB.serverTime()}); notice('Commande modifiée.'); }
+  try { const bureau=order.delivery?.method==='bureau'; await KB.db.collection('orders').doc(id).update({customer:{...(order.customer||{}),name:form.elements.name.value.trim(),phone:form.elements.phone.value.trim()},delivery:{...(order.delivery||{}),wilaya:form.elements.wilaya.value.trim(),commune:form.elements.commune.value.trim(),communeId:null,address:bureau?'':form.elements.address.value.trim(),office:bureau?form.elements.address.value.trim():''},notes:form.elements.notes.value.trim(),updatedAt:KB.serverTime()}); notice('Commande modifiée.'); }
   catch(error){ notice(`Commande non modifiée : ${error.message}`,true); }
   finally{button.disabled=false;}
+}
+async function initYalidineCommune(){
+  const form=root.querySelector('#yalidine-form'),select=form?.querySelector('#yalidine-commune');
+  if(!select)return;
+  const feedback=form.querySelector('#yalidine-commune-feedback');
+  const order=state.orders.find(o=>o.id===state.orderId);
+  try{
+    const list=await KB.yalidine.communes(Number(order.delivery?.wilayaCode));
+    if(!form.isConnected)return;
+    select.replaceChildren(new Option('Choisir la commune exacte',''));
+    list.forEach(c=>select.add(new Option(c.name,String(c.id))));select.disabled=false;
+    const normalized=value=>String(value||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9؀-ۿ]/g,'');
+    const saved=list.find(c=>order.delivery.communeId?c.id===Number(order.delivery.communeId):normalized(c.name)===normalized(order.delivery.commune));
+    if(saved)select.value=String(saved.id);
+    feedback.textContent=saved?'Commune reconnue par Yalidine.':'Choisissez la commune exacte : '+(order.delivery.commune||'non renseignée')+' n’est pas un nom officiel reconnu.';
+  }catch(error){feedback.textContent=error.message;}
 }
 async function initYalidineForm(){
   const form=root.querySelector('#yalidine-form'),city=form?.querySelector('#yalidine-city'),center=form?.querySelector('#yalidine-center');
@@ -126,43 +124,40 @@ async function initYalidineForm(){
     else feedback.textContent=cities.length?'Choisissez la ville puis le bureau de retrait.':'Aucun bureau disponible pour cette wilaya.';
   }catch(error){feedback.textContent=error.message||'Bureaux Yalidine indisponibles.'}
 }
-async function sendYalidine(event){
+async function sendYalidine(event, validateOnly=false){
   event.preventDefault();
-  const form=event.currentTarget,button=form.querySelector('[type="submit"]'),orderId=state.orderId;
-  if(state.role!=='admin'){notice('Accès administrateur requis.',true);return}
-  if(!YALIDINE_RELAY_URL){notice('La connexion Apps Script est en cours de configuration.',true);return}
-  button.disabled=true;button.textContent='ENVOI EN COURS…';
-  let frame,postForm;
+  const form=root.querySelector('#yalidine-form'),orderId=state.orderId;
+  if(yalidineBusy||!form||state.role!=='admin')return;
+  if(!form.reportValidity())return;
+  yalidineBusy=true;
+  form.querySelectorAll('button').forEach(b=>b.disabled=true);
+  form.querySelector('[type="submit"]').textContent=validateOnly?'VÉRIFICATION…':'ENVOI EN COURS…';
+  let feedback='',failed=false;
   try{
-    const order=state.orders.find(item=>item.id===orderId);
-    if(order?.delivery?.method==='bureau'){
-      const chosenId=Number(form.querySelector('#yalidine-center')?.value);
+    const order=state.orders.find(o=>o.id===orderId);let delivery={...order.delivery};
+    if(delivery.method==='bureau'){
       const centers=await loadYalidineCenters();
-      const chosen=centers.find(item=>item.id===chosenId&&item.wilayaId===Number(order.delivery.wilayaCode));
+      const chosen=centers.find(c=>c.id===Number(form.querySelector('#yalidine-center').value)&&c.wilayaId===Number(delivery.wilayaCode));
       if(!chosen)throw new Error('Choisissez une ville et un bureau Yalidine.');
-      await KB.db.collection('orders').doc(orderId).update({delivery:{...order.delivery,commune:chosen.commune,office:chosen.name,stopdeskId:chosen.id,address:''},updatedAt:KB.serverTime()});
+      delivery={...delivery,commune:chosen.commune,communeId:chosen.communeId,office:chosen.name,stopdeskId:chosen.id,address:''};
+    }else{
+      const communes=await KB.yalidine.communes(Number(delivery.wilayaCode));
+      const chosen=communes.find(c=>c.id===Number(form.querySelector('#yalidine-commune').value));
+      if(!chosen)throw new Error('Choisissez la commune exacte.');
+      delivery={...delivery,commune:chosen.name,communeId:chosen.id,wilaya:chosen.wilaya};
     }
-    const token=await KB.auth.currentUser.getIdToken();
-    const data=new FormData(form);
-    data.set('idToken',token);data.set('orderId',orderId);data.set('origin',location.origin);
-    const frameName='yalidine-response-'+Date.now();
-    frame=document.createElement('iframe');frame.name=frameName;frame.hidden=true;document.body.append(frame);
-    postForm=document.createElement('form');postForm.method='POST';postForm.action=YALIDINE_RELAY_URL;postForm.target=frameName;postForm.hidden=true;
-    for(const [name,value] of data){const input=document.createElement('input');input.name=name;input.value=value;postForm.append(input)}
-    document.body.append(postForm);
-    const result=await new Promise((resolve,reject)=>{
-      const timer=setTimeout(()=>{window.removeEventListener('message',onMessage);reject(new Error('Yalidine ne répond pas. Vérifiez les identifiants API et réessayez.'))},8000);
-      function onMessage(message){
-        if(!message.data||typeof message.data.ok!=='boolean'){return}
-        clearTimeout(timer);window.removeEventListener('message',onMessage);resolve(message.data);
-      }
-      window.addEventListener('message',onMessage);postForm.submit();
-    });
-    if(!result.ok)throw new Error(result.error||'Yalidine a refusé le colis.');
-    await KB.db.collection('orders').doc(orderId).update({status:'expediee',yalidine:{tracking:String(result.tracking),sentAt:KB.serverTime()},updatedAt:KB.serverTime()});
-    notice(`Envoi Yalidine créé · ${result.tracking}.`);
-  }catch(error){notice(error.message||'Envoi impossible.',true);button.disabled=false;button.textContent='ENVOYER À YALIDINE'}
-  finally{postForm?.remove();frame?.remove()}
+    await KB.db.collection('orders').doc(orderId).update({delivery,updatedAt:KB.serverTime()});
+    const result=await KB.yalidine.request('shipment',{idToken:await KB.auth.currentUser.getIdToken(),orderId,action:validateOnly?'validate':'create'},true);
+    if(validateOnly){
+      if(!result.validated)throw new Error('La vérification n’a pas été confirmée.');
+      feedback='Informations vérifiées : '+result.commune+', '+result.wilaya+'. Aucun colis créé lors de cette vérification.';
+    }else{
+      if(!result.tracking)throw new Error('Aucun numéro de suivi confirmé.');
+      await KB.db.collection('orders').doc(orderId).update({status:'expediee',yalidine:{tracking:String(result.tracking),sentAt:KB.serverTime()},updatedAt:KB.serverTime()});
+      feedback='Envoi Yalidine créé · '+result.tracking+'.';
+    }
+  }catch(error){feedback=error.message||'Envoi impossible.';failed=true;}
+  finally{yalidineBusy=false;renderTab();notice(feedback,failed);}
 }
 function bindTab(){
   root.querySelectorAll('[data-order-page]').forEach(button=>button.addEventListener('click',()=>{state.orderId=button.dataset.orderPage;state.tab='order-detail';history.pushState(null,'',`${location.pathname}?order=${encodeURIComponent(state.orderId)}`);renderTab()}));
@@ -170,6 +165,8 @@ function bindTab(){
   root.querySelectorAll('[data-order-edit]').forEach(form=>form.addEventListener('submit',saveOrderEdit));
   root.querySelectorAll('[data-order-open]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();state.orderId=link.dataset.orderOpen;state.tab='order-detail';history.pushState(null,'',`${location.pathname}?order=${encodeURIComponent(state.orderId)}`);renderTab()}));
   root.querySelector('#yalidine-form')?.addEventListener('submit',sendYalidine);
+  root.querySelector('#validate-yalidine')?.addEventListener('click',event=>sendYalidine(event,true));
+  initYalidineCommune();
   initYalidineForm();
   root.querySelector('#refresh-orders')?.addEventListener('click',()=>loadOrders());
   const filter=root.querySelector('#order-filter'),search=root.querySelector('#order-search');
@@ -191,7 +188,7 @@ const colorInput=root.querySelector('[name="color"]'),swatchInput=root.querySele
 
 async function loadProducts(){const docs=await KB.db.collection('products').get();state.products=docs.docs.map(doc=>({id:doc.id,...doc.data()})).sort((a,b)=>(a.name||'').localeCompare(b.name||'','fr'));if(state.tab==='products'||state.tab==='dashboard')renderTab()}
 async function loadStaff(){if(state.role!=='admin')return;const docs=await KB.db.collection('staff').get();state.staff=docs.docs.map(doc=>({id:doc.id,...doc.data()}));if(state.tab==='profile')renderTab()}
-function loadOrders(){if(state.stopOrders)state.stopOrders();state.stopOrders=KB.db.collection('orders').orderBy('createdAt','desc').limit(200).onSnapshot(snapshot=>{state.orders=snapshot.docs.map(doc=>({id:doc.id,...doc.data()}));const queryOrder=new URLSearchParams(location.search).get('order');if(queryOrder){state.orderId=queryOrder;state.tab='order-detail'}if(['orders','dashboard','order-detail'].includes(state.tab))renderTab()},error=>{console.error(error);notice('Les commandes ne peuvent pas être chargées. Vérifiez les règles Firebase.',true)})}
+function loadOrders(){if(state.stopOrders)state.stopOrders();state.stopOrders=KB.db.collection('orders').orderBy('createdAt','desc').limit(200).onSnapshot(snapshot=>{state.orders=snapshot.docs.map(doc=>({id:doc.id,...doc.data()}));const queryOrder=new URLSearchParams(location.search).get('order');if(queryOrder){state.orderId=queryOrder;state.tab='order-detail'}if(!yalidineBusy&&['orders','dashboard','order-detail'].includes(state.tab))renderTab()},error=>{console.error(error);notice('Les commandes ne peuvent pas être chargées. Vérifiez les règles Firebase.',true)})}
 
 async function readPhoto(file){
   if(!file.type.startsWith('image/'))throw new Error(`${file.name} n’est pas une image.`);

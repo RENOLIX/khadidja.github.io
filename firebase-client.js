@@ -14,6 +14,46 @@ const KB_AUTH = firebase.auth();
 window.KB_FIREBASE_CONFIG = KB_FIREBASE_CONFIG;
 window.KB = {db: KB_DB, auth: KB_AUTH, serverTime: () => firebase.firestore.FieldValue.serverTimestamp()};
 
+// Public geography only; shipment requests still require Firebase admin authentication.
+KB.yalidine = (() => {
+  const url = 'https://script.google.com/macros/s/AKfycbyRVMZuK2GzQjsklwFXGYJnMfuU-GfqTrg3VBY98T-yhUbkUfyDw9MYT83b4WO46tSU/exec';
+  const reads = new Map();
+  function request(mode, values = {}, post = false) {
+    return new Promise((resolve, reject) => {
+      const requestId = crypto.randomUUID();
+      const frame = document.createElement('iframe');
+      frame.hidden = true; frame.name = 'yalidine-' + requestId;
+      let form, done = false;
+      const finish = (error, result) => {
+        if (done) return; done = true;
+        clearTimeout(timer); window.removeEventListener('message', receive);
+        frame.remove(); form?.remove();
+        error ? reject(error) : resolve(result);
+      };
+      function receive(event) {
+        const trusted = event.origin === 'https://script.google.com' || /^https:\/\/(?:[a-z0-9-]+[.-])?script\.googleusercontent\.com$/.test(event.origin);
+        if (!trusted || event.data?.requestId !== requestId || event.data?.type !== 'yalidine-' + mode) return;
+        finish(event.data.ok ? null : new Error(event.data.error || 'Réponse Yalidine invalide.'), event.data);
+      }
+      const timer = setTimeout(() => finish(new Error(post ? 'La confirmation tarde à arriver. Consultez cette commande avant de relancer un envoi.' : 'Chargement Yalidine indisponible. Réessayez.')), 25000);
+      window.addEventListener('message', receive);
+      const fields = {...values, mode, origin: location.origin, requestId};
+      document.body.append(frame);
+      if (post) {
+        form = document.createElement('form'); form.method = 'POST'; form.action = url; form.target = frame.name; form.hidden = true;
+        for (const [name, value] of Object.entries(fields)) { const input = document.createElement('input'); input.name = name; input.value = value; form.append(input); }
+        document.body.append(form); form.submit();
+      } else frame.src = url + '?' + new URLSearchParams(fields);
+    });
+  }
+  function read(mode, values = {}) {
+    const key = mode + JSON.stringify(values);
+    if (!reads.has(key)) reads.set(key, request(mode, values).catch(error => { reads.delete(key); throw error; }));
+    return reads.get(key);
+  }
+  return {request, communes: wilaya => read('communes', {wilaya}).then(r => r.communes), centers: () => read('centers').then(r => r.centers)};
+})();
+
 async function loadKhadidjaCatalog() {
   try {
     const state = await KB_DB.collection('settings').doc('catalog').get();

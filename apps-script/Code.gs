@@ -8,11 +8,14 @@ function doGet(e) {
   const origin = String(e.parameter.origin || '');
   let result;
   try {
-    if (ALLOWED_ORIGINS.indexOf(origin) < 0 || e.parameter.mode !== 'centers') throw new Error('Demande non autorisée.');
-    result = {type: 'yalidine-centers', ok: true, centers: listCenters_()};
+    if (ALLOWED_ORIGINS.indexOf(origin) < 0) throw new Error('Demande non autorisée.');
+    if (e.parameter.mode === 'centers') result = {type: 'yalidine-centers', ok: true, centers: listCenters_()};
+    else if (e.parameter.mode === 'communes') result = {type: 'yalidine-communes', ok: true, communes: listCommunes_(e.parameter.wilaya)};
+    else throw new Error('Mode inconnu.');
   } catch (error) {
-    result = {type: 'yalidine-centers', ok: false, error: String(error.message || error)};
+    result = {type: 'yalidine-' + e.parameter.mode, ok: false, error: String(error.message || error)};
   }
+  result.requestId = e.parameter.requestId || '';
   return messagePage_(result, origin);
 }
 
@@ -26,6 +29,8 @@ function doPost(e) {
   } catch (error) {
     result = {ok: false, error: String(error.message || error)};
   }
+  result.type = 'yalidine-shipment';
+  result.requestId = e.parameter.requestId || '';
   return messagePage_(result, targetOrigin);
 }
 
@@ -65,11 +70,39 @@ function resolveCenter_(delivery) {
   throw new Error('Choisissez une ville et un bureau Yalidine pour cette commande.');
 }
 
-function normalizeCommune_(delivery) {
-  const raw = String(delivery.commune || '').trim();
-  const key = raw.toLocaleLowerCase('fr-FR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  if (Number(delivery.wilayaCode) === 16 && key === 'alger') return 'Alger Centre';
-  return raw;
+function listCommunes_(wilaya) {
+  const id = Number(wilaya);
+  if (!Number.isInteger(id) || id < 1 || id > 58) throw new Error('Wilaya invalide.');
+  const cache = CacheService.getScriptCache(), key = 'communes_v2_' + id;
+  const cached = cache.get(key);
+  if (cached) return JSON.parse(cached);
+  const props = PropertiesService.getScriptProperties();
+  const headers = {'X-API-ID': props.getProperty('YALIDINE_API_ID'), 'X-API-TOKEN': props.getProperty('YALIDINE_API_TOKEN')};
+  const all = [];
+  for (let page = 1; page <= 20; page++) {
+    const response = UrlFetchApp.fetch('https://api.yalidine.app/v1/communes/?wilaya_id=' + id + '&page=' + page, {headers: headers, muteHttpExceptions: true});
+    if (response.getResponseCode() !== 200) throw new Error('Liste des communes Yalidine indisponible.');
+    const body = JSON.parse(response.getContentText());
+    if (!Array.isArray(body.data)) throw new Error('Liste des communes invalide.');
+    body.data.forEach(c => { if (Number(c.wilaya_id) === id && Number(c.is_deliverable) === 1) all.push({id:Number(c.id), name:String(c.name), wilaya:String(c.wilaya_name), wilayaId:id}); });
+    if (!body.has_more) break;
+  }
+  if (!all.length) throw new Error('Aucune commune livrable pour cette wilaya.');
+  cache.put(key, JSON.stringify(all), 21600);
+  return all;
+}
+
+function normalizeName_(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]/g, '');
+}
+
+function resolveCommune_(delivery, stopdesk) {
+  const all = listCommunes_(delivery.wilayaCode);
+  const id = Number(stopdesk ? stopdesk.communeId : delivery.communeId);
+  const name = normalizeName_(stopdesk ? stopdesk.commune : delivery.commune);
+  const match = all.find(c => id ? c.id === id : normalizeName_(c.name) === name);
+  if (!match) throw new Error('Choisissez la commune exacte dans la liste Yalidine avant l’envoi.');
+  return match;
 }
 
 function createShipment_(input) {
@@ -90,12 +123,12 @@ function createShipment_(input) {
   if (!['nouvelle', 'injoignable'].includes(order.status)) throw new Error('Statut incompatible avec un nouvel envoi.');
 
   const lock = LockService.getScriptLock();
-  lock.waitLock(30000);
+  if (!lock.tryLock(1000)) throw new Error('Un envoi est déjà en cours. Patientez quelques secondes.');
   try {
     const props = PropertiesService.getScriptProperties();
     const key = 'yalidine_order_' + orderId;
     const previous = props.getProperty(key);
-    if (previous) {
+    if (previous && input.action !== 'validate') {
       const saved = JSON.parse(previous);
       if (saved.tracking) return {ok: true, alreadySent: true, tracking: saved.tracking, orderId: orderId};
       throw new Error('Envoi en attente de vérification. Contrôlez la commande dans Yalidine avant de réessayer.');
@@ -110,6 +143,7 @@ function createShipment_(input) {
     const isStopdesk = delivery.method === 'bureau';
     const stopdesk = isStopdesk ? resolveCenter_(delivery) : null;
     if (!customer.phone || !delivery.wilaya || !delivery.commune || (!isStopdesk && !delivery.address)) throw new Error('Coordonnées de livraison incomplètes.');
+    const destination = resolveCommune_(delivery, stopdesk);
     const parcel = {
       order_id: orderId,
       from_wilaya_name: 'Alger',
@@ -117,8 +151,8 @@ function createShipment_(input) {
       familyname: names.join(' ') || 'Khadidja',
       contact_phone: String(customer.phone),
       address: String(isStopdesk ? stopdesk.address : delivery.address),
-      to_commune_name: String(isStopdesk ? stopdesk.commune : normalizeCommune_(delivery)),
-      to_wilaya_name: String(delivery.wilaya),
+      to_commune_name: destination.name,
+      to_wilaya_name: destination.wilaya,
       product_list: (order.items || []).map(item => String(item.quantity || 1) + '× ' + String(item.name || 'Robe')).join(', '),
       price: Number(order.total),
       height: Math.max(10, itemCount * 6), width: 30, length: 40, weight: Math.max(1, Math.ceil(itemCount * 0.8)),
@@ -127,6 +161,7 @@ function createShipment_(input) {
       product_to_collect: null
     };
     if (isStopdesk) parcel.stopdesk_id = stopdesk.id;
+    if (input.action === 'validate') return {ok: true, validated: true, commune: destination.name, wilaya: destination.wilaya, orderId: orderId};
     props.setProperty(key, JSON.stringify({pending: true, createdAt: new Date().toISOString()}));
     const response = UrlFetchApp.fetch('https://api.yalidine.app/v1/parcels/', {
       method: 'post', contentType: 'application/json',
@@ -143,11 +178,12 @@ function createShipment_(input) {
     const item = Array.isArray(body) ? body[0] : (Array.isArray(body.data) ? body.data[0] : (body[orderId] || body));
     const labelTracking = item && item.label && String(item.label).match(/[?&]tracking=([^&]+)/);
     const tracking = item && (item.tracking || item.tracking_number || item.parcel_id || item.data?.tracking || (labelTracking && labelTracking[1]));
-    if (!tracking || item.success === false) {
+    if (item && item.success === false) {
       props.deleteProperty(key);
       const detail = item && (item.message || item.error) ? String(item.message || item.error) : 'Yalidine n’a pas fourni de numéro de suivi.';
       throw new Error(detail);
     }
+    if (!tracking) throw new Error('Résultat non confirmé par Yalidine. Vérifiez cette expédition avant un nouvel envoi.');
     props.setProperty(key, JSON.stringify({tracking: String(tracking), sentAt: new Date().toISOString()}));
     return {ok: true, tracking: String(tracking), orderId: orderId};
   } finally {
