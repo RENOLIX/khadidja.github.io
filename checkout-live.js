@@ -132,6 +132,15 @@ setupCheckout = function () {
         createdAt:KB.serverTime(), updatedAt:KB.serverTime()
       };
       const saved = await KB.db.collection('orders').add(order);
+      // The thank-you page can attribute a Purchase only to this saved order.
+      // Keep product and amount data for this tab; never put customer details in the pixel.
+      if (window.KBCookies?.hasConsent('marketing')) {
+        try {
+          sessionStorage.setItem('khadidja-meta-purchase-v1', JSON.stringify({
+            ref:saved.id, items, total:order.total, currency:order.currency
+          }));
+        } catch { /* The order remains valid if browser storage is unavailable. */ }
+      }
       saveCart([]);
       updateCount();
       location.href = link(`/merci/?ref=${encodeURIComponent(saved.id)}`);

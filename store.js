@@ -56,7 +56,20 @@ function cartItems() {
     return availableCartItems(raw);
   } catch { return []; }
 }
-function saveCart(items) { localStorage.setItem(CART_KEY,JSON.stringify(availableCartItems(items))); updateCount(); }
+function saveCart(items) {
+  const previous = cartItems();
+  const next = availableCartItems(items);
+  localStorage.setItem(CART_KEY, JSON.stringify(next));
+  updateCount();
+  next.forEach(item => {
+    const before = previous.find(old => old.id === item.id && old.size === item.size)?.quantity || 0;
+    const added = item.quantity - before;
+    if (added > 0) {
+      const product = byId(item.id);
+      window.dispatchEvent(new CustomEvent('kb:added-to-cart', {detail:{productId:item.id,quantity:added,unitPrice:product.price}}));
+    }
+  });
+}
 function cartCount() { return cartItems().reduce((sum,item)=>sum+item.quantity,0); }
 function cartTotal() { return cartItems().reduce((sum,item)=>sum+byId(item.id).price*item.quantity,0); }
 function updateCount() { document.querySelectorAll('[data-cart-count]').forEach(el=>el.textContent=cartCount()); }
@@ -120,6 +133,7 @@ function render() {
   let body=page==='legal'?legalPage():page==='product'?(p&&p.active!==false?productPage(p):missingProduct):page==='cart'?cartPage():page==='checkout'?checkoutPage():page==='thanks'?thanksPage():page==='category'?categoryPage():page==='collection'?collectionPage():page==='new'?newPage():page==='guide'?guidePage():page==='about'?aboutPage():page==='help'?helpPage():page==='profile'?profilePage():page==='contact'?contactPage():homePage();
   document.querySelector('#app').innerHTML=(shellHeader()+body+shellFooter()).replace(/(href|src)="\//g,`$1="${BASE}/`).replace(/url\('\/assets/g,`url('${BASE}/assets`);
   updateCount();setupShell();if(page==='home')setupHero();if(page==='product'&&p&&p.active!==false)setupProduct(p);if(page==='cart')setupCart();if(page==='checkout')setupCheckout();if(typeof setupPro==='function')setupPro();if(typeof setupLegal==='function')setupLegal();
+  window.dispatchEvent(new CustomEvent('kb:render', {detail:{page,productId:p?.id || null}}));
 }
 document.addEventListener('DOMContentLoaded',()=>{
   if (window.KB_CATALOG_READY === false) return;
